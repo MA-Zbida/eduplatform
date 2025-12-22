@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle=${student.id != null ? 'Edit Student' : 'New Student'}, content=~{::content}, extraStyles=null, extraScripts=null)}">
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/students}">Students</a></li>
+                <li class="breadcrumb-item active" th:text="${student.id != null ? 'Edit Student' : 'New Student'}">Form</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0" th:text="${student.id != null ? 'Edit Student' : 'Create New Student'}">Student Form</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="${student.id != null ? '/admin/students/' + student.id + '/edit' : '/admin/students/new'}" 
+                          method="post" th:object="${student}">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fullName" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="fullName" th:field="*{fullName}"
+                                       th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" th:field="*{username}"
+                                       th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" th:field="*{email}"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Password 
+                                <span th:if="${student.id == null}" class="text-danger">*</span>
+                                <span th:if="${student.id != null}" class="text-muted small">(leave blank to keep current)</span>
+                            </label>
+                            <input type="password" class="form-control" id="password" th:field="*{password}"
+                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                   th:required="${student.id == null}">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enabled" th:field="*{enabled}">
+                                <label class="form-check-label" for="enabled">Account Enabled</label>
+                            </div>
+                        </div>
+
+                        <input type="hidden" th:field="*{role}" value="STUDENT">
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>
+                                <span th:text="${student.id != null ? 'Update Student' : 'Create Student'}">Save</span>
+                            </button>
+                            <a th:href="@{/admin/students}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Guidelines</h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Username must be unique and 3-50 characters</li>
+                        <li>Password must be at least 6 characters</li>
+                        <li>Use a valid email address</li>
+                        <li>Disabled accounts cannot log in</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

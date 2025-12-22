@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle='Quiz Result', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=null)}">
+<head>
+    <th:block th:fragment="extraStyles">
+        <style>
+            .result-header {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                color: white;
+                border-radius: 0.75rem;
+            }
+            .score-circle {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto;
+            }
+            .score-passed {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+            }
+            .score-failed {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+            }
+            .question-result {
+                border-left: 4px solid;
+            }
+            .question-correct {
+                border-left-color: #22c55e;
+            }
+            .question-incorrect {
+                border-left-color: #ef4444;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" th:text="${quiz.course.title}">Course</a></li>
+                <li class="breadcrumb-item active">Quiz Result</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Result Header -->
+    <div class="result-header p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                <div class="score-circle" th:classappend="${result.passed ? 'score-passed' : 'score-failed'}">
+                    <div>
+                        <div class="display-4 fw-bold" th:text="${#numbers.formatDecimal(result.scorePercentage, 1, 0)} + '%'">85%</div>
+                        <small>Score</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <h2 th:if="${result.passed}"><i class="bi bi-trophy me-2"></i>Congratulations!</h2>
+                <h2 th:unless="${result.passed}"><i class="bi bi-emoji-frown me-2"></i>Keep Learning!</h2>
+                <p class="lead mb-3" th:text="${result.agentFeedback}">AI Feedback here...</p>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                            <div class="h4 mb-0" th:text="${result.correctAnswers} + '/' + ${result.totalQuestions}">4/5</div>
+                            <small>Correct Answers</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                            <div class="h4 mb-0" th:text="${(result.timeTakenSeconds / 60)} + 'm ' + ${(result.timeTakenSeconds % 60)} + 's'">2m 30s</div>
+                            <small>Time Taken</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                            <div class="h4 mb-0" th:text="${result.recommendedNextDifficulty}">MEDIUM</div>
+                            <small>Next Difficulty</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Question Review -->
+            <h5 class="mb-3"><i class="bi bi-journal-check me-2"></i>Question Review</h5>
+            
+            <div th:each="question, iterStat : ${questions}" class="card question-result mb-3"
+                 th:classappend="${#lists.contains(result.studentAnswers.![questionId], question.id) ? 
+                     (#lists.contains(result.studentAnswers.?[questionId == #root.question.id and correct == true].![questionId], question.id) ? 'question-correct' : 'question-incorrect') : 
+                     'question-incorrect'}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-secondary">Question [[${iterStat.count}]]</span>
+                        <th:block th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}">
+                            <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}" class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Correct
+                            </span>
+                            <span th:unless="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].correct}" class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Incorrect
+                            </span>
+                        </th:block>
+                    </div>
+                    
+                    <h6 th:text="${question.questionText}">Question?</h6>
+                    
+                    <div class="mt-3">
+                        <div th:each="option, optStat : ${question.options}" class="mb-2">
+                            <th:block th:with="studentAnswer=${result.studentAnswers.?[questionId == #root.question.id]}">
+                                <div th:class="${optStat.index == question.correctOptionIndex ? 'p-2 bg-success bg-opacity-10 rounded border border-success' : 
+                                               (!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex ? 'p-2 bg-danger bg-opacity-10 rounded border border-danger' : 'p-2')}">
+                                    <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
+                                    <span th:text="${option.optionText}">Option</span>
+                                    <span th:if="${optStat.index == question.correctOptionIndex}" class="badge bg-success ms-2">Correct Answer</span>
+                                    <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex}" 
+                                          class="badge bg-danger ms-2">Your Answer</span>
+                                </div>
+                            </th:block>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3 mb-0" th:if="${question.explanation}">
+                        <strong><i class="bi bi-lightbulb me-2"></i>Explanation:</strong>
+                        <span th:text="${question.explanation}">Explanation text...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-arrow-right-circle me-2"></i>Next Steps</h5>
+                </div>
+                <div class="card-body d-grid gap-2">
+                    <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-2"></i>Take Another Quiz
+                    </a>
+                    <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-outline-primary">
+                        <i class="bi bi-book me-2"></i>Review Course Material
+                    </a>
+                    <a th:href="@{/student/history}" class="btn btn-outline-secondary">
+                        <i class="bi bi-clock-history me-2"></i>View All Results
+                    </a>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="card" th:classappend="${result.passed ? 'bg-success bg-opacity-10' : 'bg-warning bg-opacity-10'}">
+                <div class="card-body text-center">
+                    <i th:if="${result.passed}" class="bi bi-patch-check-fill text-success fs-1"></i>
+                    <i th:unless="${result.passed}" class="bi bi-hourglass-split text-warning fs-1"></i>
+                    <h5 class="mt-2" th:if="${result.passed}">Course Progress Updated!</h5>
+                    <h5 class="mt-2" th:unless="${result.passed}">Keep Practicing!</h5>
+                    <p class="small mb-0 text-muted">
+                        <span th:if="${result.passed}">Great job! Your progress has been recorded.</span>
+                        <span th:unless="${result.passed}">You need 70% to pass. Review the material and try again!</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle='Student Dashboard', content=~{::content}, extraStyles=null, extraScripts=null)}">
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Welcome, <span th:text="${user.fullName}">Student</span>!</h1>
+            <p class="text-muted mb-0">Here's your learning progress</p>
+        </div>
+        <span class="text-muted" th:text="${#temporals.format(#temporals.createNow(), 'MMMM dd, yyyy')}"></span>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                        <i class="bi bi-book fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Enrolled Courses</h6>
+                        <h3 class="mb-0" th:text="${stats.totalCourses}">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                        <i class="bi bi-check-circle fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Completed</h6>
+                        <h3 class="mb-0" th:text="${stats.publishedCourses}">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info me-3">
+                        <i class="bi bi-question-circle fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Quizzes Taken</h6>
+                        <h3 class="mb-0" th:text="${stats.totalQuizzes}">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3">
+                        <i class="bi bi-graph-up fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Avg. Score</h6>
+                        <h3 class="mb-0" th:text="${#numbers.formatDecimal(stats.averageQuizScore, 1, 1)} + '%'">0%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- My Courses -->
+        <div class="col-lg-7 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-book me-2"></i>My Courses</h5>
+                    <a th:href="@{/student/courses}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a th:each="enrollment : ${enrollments}" 
+                           th:href="@{/student/courses/{id}(id=${enrollment.course.id})}"
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1" th:text="${enrollment.course.title}">Course Title</h6>
+                                    <small class="text-muted">
+                                        Enrolled: <span th:text="${#temporals.format(enrollment.enrolledAt, 'MMM dd, yyyy')}"></span>
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span th:if="${enrollment.status.name() == 'IN_PROGRESS'}" class="badge bg-warning">In Progress</span>
+                                    <span th:if="${enrollment.status.name() == 'COMPLETED'}" class="badge bg-success">Completed</span>
+                                    <div class="progress mt-2" style="height: 6px; width: 80px;">
+                                        <div class="progress-bar progress-bar-custom" 
+                                             th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        <div th:if="${#lists.isEmpty(enrollments)}" class="list-group-item text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">No courses enrolled yet</p>
+                            <small>Contact your administrator to get enrolled</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Quiz Results -->
+        <div class="col-lg-5 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Results</h5>
+                    <a th:href="@{/student/history}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div th:each="result : ${recentResults}" class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1" th:text="${result.quiz.course.title}">Course</h6>
+                                    <small class="text-muted" th:text="${#temporals.format(result.completedAt, 'MMM dd, HH:mm')}"></small>
+                                </div>
+                                <div class="text-end">
+                                    <span th:class="${result.passed ? 'badge bg-success' : 'badge bg-danger'}"
+                                          th:text="${#numbers.formatDecimal(result.scorePercentage, 1, 1)} + '%'">0%</span>
+                                    <div>
+                                        <small th:text="${result.correctAnswers} + '/' + ${result.totalQuestions} + ' correct'"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(recentResults)}" class="list-group-item text-center text-muted py-4">
+                            <i class="bi bi-clipboard fs-1 d-block mb-2"></i>
+                            <p class="mb-0">No quizzes taken yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <a th:href="@{/student/courses}" class="btn btn-primary w-100 py-3">
+                        <i class="bi bi-book me-2"></i>Browse My Courses
+                    </a>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <a th:href="@{/student/quizzes}" class="btn btn-outline-primary w-100 py-3">
+                        <i class="bi bi-question-circle me-2"></i>View Quizzes
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a th:href="@{/student/history}" class="btn btn-outline-secondary w-100 py-3">
+                        <i class="bi bi-graph-up me-2"></i>Performance History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

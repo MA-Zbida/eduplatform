@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle='Course Content', content=~{::content}, extraStyles=null, extraScripts=null)}">
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/student/courses}">My Courses</a></li>
+                <li class="breadcrumb-item active" th:text="${course.title}">Course</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Course Content -->
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0" th:text="${course.title}">Course Title</h4>
+                    <span th:if="${enrollment.status.name() == 'COMPLETED'}" class="badge bg-success fs-6">
+                        <i class="bi bi-check-circle me-1"></i>Completed
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p th:if="${course.description}" th:text="${course.description}" class="lead text-muted"></p>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-journal-text me-2"></i>Course Material</h5>
+                    <div class="bg-light p-4 rounded" style="max-height: 500px; overflow-y: auto;">
+                        <div style="white-space: pre-wrap; font-size: 1rem; line-height: 1.8;" 
+                             th:text="${course.content}">Course content...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Previous Quizzes -->
+            <div class="card" th:if="${!#lists.isEmpty(quizzes)}">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Your Quiz History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Difficulty</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="quiz : ${quizzes}">
+                                    <td th:text="${#temporals.format(quiz.createdAt, 'MMM dd, yyyy HH:mm')}">Date</td>
+                                    <td>
+                                        <span th:text="${quiz.difficulty.name()}" 
+                                              th:class="${quiz.difficulty.name() == 'EASY' ? 'badge bg-success' : 
+                                                         (quiz.difficulty.name() == 'MEDIUM' ? 'badge bg-warning' : 
+                                                         (quiz.difficulty.name() == 'HARD' ? 'badge bg-danger' : 'badge bg-dark'))}">
+                                            Medium
+                                        </span>
+                                    </td>
+                                    <td th:if="${quiz.result != null}" 
+                                        th:text="${#numbers.formatDecimal(quiz.result.scorePercentage, 1, 1)} + '%'">0%</td>
+                                    <td th:if="${quiz.result == null}">-</td>
+                                    <td>
+                                        <span th:if="${quiz.result != null && quiz.result.passed}" class="badge bg-success">Passed</span>
+                                        <span th:if="${quiz.result != null && !quiz.result.passed}" class="badge bg-danger">Failed</span>
+                                        <span th:if="${quiz.result == null}" class="badge bg-secondary">Pending</span>
+                                    </td>
+                                    <td>
+                                        <a th:if="${quiz.result != null}" 
+                                           th:href="@{/student/quizzes/{id}/result(id=${quiz.id})}" 
+                                           class="btn btn-sm btn-outline-primary">View Result</a>
+                                        <a th:if="${quiz.result == null}" 
+                                           th:href="@{/student/quizzes/{id}(id=${quiz.id})}" 
+                                           class="btn btn-sm btn-primary">Continue</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Generate Quiz -->
+            <div class="card mb-4" th:if="${course.indexed}">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>AI Quiz Generator</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Generate a personalized quiz based on the course content using AI.</p>
+                    
+                    <form th:action="@{/student/courses/{id}/quiz/generate(id=${course.id})}" method="post">
+                        <div class="mb-3">
+                            <label for="numberOfQuestions" class="form-label">Number of Questions</label>
+                            <select name="numberOfQuestions" id="numberOfQuestions" class="form-select">
+                                <option value="3">3 Questions</option>
+                                <option value="5" selected>5 Questions</option>
+                                <option value="10">10 Questions</option>
+                                <option value="15">15 Questions</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="difficulty" class="form-label">Difficulty Level</label>
+                            <select name="difficulty" id="difficulty" class="form-select">
+                                <option value="">Auto (Based on your performance)</option>
+                                <option th:each="level : ${difficulties}" th:value="${level}" th:text="${level}">Level</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-play-fill me-2"></i>Generate Quiz
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4" th:unless="${course.indexed}">
+                <div class="card-body text-center">
+                    <i class="bi bi-hourglass-split text-warning fs-1"></i>
+                    <p class="mt-2 mb-0">Quiz generation is not yet available for this course. Please check back later.</p>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Your Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="display-4 fw-bold text-primary" th:text="${enrollment.progressPercentage} + '%'">0%</div>
+                        <p class="text-muted">Course Progress</p>
+                    </div>
+                    <div class="progress mb-3" style="height: 10px;">
+                        <div class="progress-bar progress-bar-custom" 
+                             th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span>Started: <span th:text="${#temporals.format(enrollment.enrolledAt, 'MMM dd')}"></span></span>
+                        <span th:if="${enrollment.completedAt}">Completed: <span th:text="${#temporals.format(enrollment.completedAt, 'MMM dd')}"></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Recommendations -->
+            <div class="card" th:if="${!#lists.isEmpty(recommendations)}">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h5 class="mb-0 text-info"><i class="bi bi-lightbulb me-2"></i>AI Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li th:each="rec : ${recommendations}" class="mb-2">
+                            <i class="bi bi-arrow-right text-info me-2"></i>
+                            <span th:text="${rec}">Recommendation</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

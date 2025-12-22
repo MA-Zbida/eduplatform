@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle='Take Quiz', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=~{::extraScripts})}">
+<head>
+    <th:block th:fragment="extraStyles">
+        <style>
+            .question-card {
+                border-left: 4px solid var(--primary-color);
+            }
+            .option-label {
+                display: block;
+                padding: 1rem;
+                margin-bottom: 0.5rem;
+                border: 2px solid #e2e8f0;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .option-label:hover {
+                border-color: var(--primary-color);
+                background-color: #f8fafc;
+            }
+            .form-check-input:checked + .option-label {
+                border-color: var(--primary-color);
+                background-color: rgba(79, 70, 229, 0.1);
+            }
+            .timer {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" th:text="${quiz.course.title}">Course</a></li>
+                <li class="breadcrumb-item active">Quiz</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form th:action="@{/student/quizzes/{id}/submit(id=${quiz.id})}" method="post" id="quizForm">
+                <input type="hidden" name="timeTaken" id="timeTaken" value="0">
+
+                <div th:each="question, iterStat : ${questions}" class="card question-card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-primary">Question [[${iterStat.count}]] of [[${questions.size()}]]</span>
+                        </div>
+                        <h5 class="mb-4" th:text="${question.questionText}">Question text?</h5>
+                        
+                        <div class="options">
+                            <div th:each="option, optStat : ${question.options}" class="form-check p-0">
+                                <input type="radio" 
+                                       th:name="'answer_' + ${question.id}" 
+                                       th:id="'q' + ${question.id} + '_opt' + ${optStat.index}"
+                                       th:value="${optStat.index}"
+                                       class="form-check-input visually-hidden" 
+                                       required>
+                                <label class="option-label" 
+                                       th:for="'q' + ${question.id} + '_opt' + ${optStat.index}">
+                                    <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
+                                    <span th:text="${option.optionText}">Option text</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <a th:href="@{/student/courses/{id}(id=${quiz.course.id})}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Course
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>Submit Quiz
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Timer -->
+            <div class="card mb-4 sticky-top" style="top: 1rem;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-stopwatch me-2"></i>Quiz Timer</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="timer text-primary" id="timer">00:00</div>
+                    <p class="text-muted small mb-0">Time elapsed</p>
+                </div>
+            </div>
+
+            <!-- Quiz Info -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quiz Info</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Course</span>
+                        <strong th:text="${quiz.course.title}">Course</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Difficulty</span>
+                        <span th:text="${quiz.difficulty.name()}" 
+                              th:class="${quiz.difficulty.name() == 'EASY' ? 'badge bg-success' : 
+                                         (quiz.difficulty.name() == 'MEDIUM' ? 'badge bg-warning' : 
+                                         (quiz.difficulty.name() == 'HARD' ? 'badge bg-danger' : 'badge bg-dark'))}">
+                            Medium
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Questions</span>
+                        <strong th:text="${questions.size()}">5</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Generated by</span>
+                        <span th:if="${quiz.generatedByGemini}" class="badge bg-info">
+                            <i class="bi bi-stars me-1"></i>
+                            <span th:text="${quiz.llmModelUsed != null ? 'Gemini ' + quiz.llmModelUsed : 'Google Gemini AI'}">Gemini AI</span>
+                        </span>
+                        <span th:unless="${quiz.generatedByGemini}" class="badge bg-secondary">
+                            <i class="bi bi-gear me-1"></i>Mock Mode
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6><i class="bi bi-lightbulb me-2"></i>Tips</h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Read each question carefully</li>
+                        <li>All questions must be answered</li>
+                        <li>You cannot go back after submitting</li>
+                        <li>70% is required to pass</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:fragment="extraScripts">
+    <script>
+        let seconds = 0;
+        const timerElement = document.getElementById('timer');
+        const timeTakenInput = document.getElementById('timeTaken');
+
+        function updateTimer() {
+            seconds++;
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            timerElement.textContent = `${mins}:${secs}`;
+            timeTakenInput.value = seconds;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        // Confirm before leaving
+        window.onbeforeunload = function() {
+            return "Are you sure you want to leave? Your progress will be lost.";
+        };
+
+        document.getElementById('quizForm').addEventListener('submit', function() {
+            window.onbeforeunload = null;
+        });
+    </script>
+</th:block>
+</body>
+</html>

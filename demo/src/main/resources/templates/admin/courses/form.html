@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle=${course.id != null ? 'Edit Course' : 'New Course'}, content=~{::content}, extraStyles=null, extraScripts=null)}">
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/courses}">Courses</a></li>
+                <li class="breadcrumb-item active" th:text="${course.id != null ? 'Edit Course' : 'New Course'}">Form</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0" th:text="${course.id != null ? 'Edit Course' : 'Create New Course'}">Course Form</h1>
+    </div>
+
+    <form th:action="${course.id != null ? '/admin/courses/' + course.id + '/edit' : '/admin/courses/new'}" 
+          method="post" th:object="${course}">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Course Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Course Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}"
+                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'" 
+                                   placeholder="e.g., Introduction to Spring Boot" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" rows="3"
+                                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"
+                                      placeholder="A brief description of the course..."></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Course Content</h5>
+                        <small class="text-muted">This content will be used for RAG-based quiz generation</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" th:field="*{content}" rows="15"
+                                      th:classappend="${#fields.hasErrors('content')} ? 'is-invalid'"
+                                      placeholder="Enter the course content here. This text will be chunked and indexed for AI quiz generation..."
+                                      required></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Use paragraphs (blank lines) to separate topics. Each paragraph helps the AI create focused questions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>
+                                <span th:text="${course.id != null ? 'Update Course' : 'Create Course'}">Save</span>
+                            </button>
+                            <a th:href="@{/admin/courses}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-lightbulb me-2"></i>Content Tips</h6>
+                        <ul class="small text-muted mb-0">
+                            <li>Use clear, well-structured paragraphs</li>
+                            <li>Include key concepts and definitions</li>
+                            <li>Separate topics with blank lines</li>
+                            <li>The AI uses this content to generate quiz questions</li>
+                            <li>More detailed content = better quizzes</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card bg-info bg-opacity-10 mt-4" th:if="${course.id != null}">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-cpu me-2"></i>AI Quiz Generation</h6>
+                        <p class="small mb-0">After publishing, index the course for RAG to enable AI-powered quiz generation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>
