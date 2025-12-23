@@ -70,6 +70,12 @@
                                 <i class="bi bi-cpu me-2"></i>Index for RAG
                             </button>
                         </form>
+                        
+                        <a th:if="${course.indexed}" 
+                           th:href="@{/admin/courses/{id}/rag(id=${course.id})}" 
+                           class="btn btn-outline-info">
+                            <i class="bi bi-eye me-2"></i>View RAG Output
+                        </a>
                     </div>
                 </div>
             </div>
@@ -205,7 +211,10 @@
             <div class="card bg-info bg-opacity-10" th:if="${course.indexed}">
                 <div class="card-body">
                     <h6><i class="bi bi-cpu me-2"></i>AI Quiz Ready</h6>
-                    <p class="small mb-0">This course is indexed for RAG. Students can generate AI-powered quizzes based on the course content.</p>
+                    <p class="small mb-2">This course is indexed for RAG. Students can generate AI-powered quizzes based on the course content.</p>
+                    <a th:href="@{/admin/courses/{id}/rag(id=${course.id})}" class="btn btn-sm btn-info text-white">
+                        <i class="bi bi-eye me-2"></i>View RAG Output
+                    </a>
                 </div>
             </div>
         </div>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: html(pageTitle='RAG Output', content=~{::content}, extraStyles=~{::extraStyles}, extraScripts=null)}">
+<head>
+    <th:block th:fragment="extraStyles">
+        <style>
+            .chunk-card {
+                border-left: 4px solid #0d6efd;
+                transition: all 0.2s ease;
+            }
+            .chunk-card:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .chunk-index {
+                background: linear-gradient(135deg, #0d6efd, #6610f2);
+                color: white;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+            }
+            .chunk-content {
+                white-space: pre-wrap;
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-size: 0.875rem;
+                background-color: #f8f9fa;
+                padding: 1rem;
+                border-radius: 0.375rem;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            .stats-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .chunk-meta {
+                font-size: 0.8rem;
+                color: #6c757d;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/courses}">Courses</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/courses/{id}(id=${course.id})}" th:text="${course.title}">Course</a></li>
+                <li class="breadcrumb-item active">RAG Output</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-cpu me-2 text-info"></i>RAG Output
+            </h2>
+            <p class="text-muted mb-0">Indexed content chunks for: <strong th:text="${course.title}">Course Title</strong></p>
+        </div>
+        <a th:href="@{/admin/courses/{id}(id=${course.id})}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Course
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-collection fs-1 mb-2"></i>
+                    <h3 class="mb-0" th:text="${stats.chunkCount()}">0</h3>
+                    <small>Total Chunks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-text fs-1 mb-2"></i>
+                    <h3 class="mb-0" th:text="${#numbers.formatInteger(stats.totalCharacters(), 3, 'COMMA')}">0</h3>
+                    <small>Total Characters</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up fs-1 mb-2"></i>
+                    <h3 class="mb-0" th:text="${#numbers.formatDecimal(stats.averageChunkSize(), 1, 0)}">0</h3>
+                    <small>Avg Chunk Size</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAG Configuration Info -->
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info bg-opacity-10">
+            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>RAG Configuration</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Chunk Size:</strong> 500 characters
+                </div>
+                <div class="col-md-4">
+                    <strong>Chunk Overlap:</strong> 50 characters
+                </div>
+                <div class="col-md-4">
+                    <strong>Indexed At:</strong> 
+                    <span th:text="${#temporals.format(course.indexedAt, 'MMM dd, yyyy HH:mm')}">Date</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chunks List -->
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-columns me-2"></i>Content Chunks</h5>
+            <span class="badge bg-primary" th:text="${stats.chunkCount()} + ' chunks'">0 chunks</span>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(chunks)}" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1"></i>
+                <p class="mt-2">No chunks found. The course may not be indexed yet.</p>
+            </div>
+
+            <div th:each="chunk, iterStat : ${chunks}" class="chunk-card card mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="chunk-index me-3" th:text="${chunk.chunkIndex + 1}">1</div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Chunk #<span th:text="${chunk.chunkIndex + 1}">1</span></h6>
+                                <div class="chunk-meta">
+                                    <span class="me-3">
+                                        <i class="bi bi-text-paragraph me-1"></i>
+                                        <span th:text="${chunk.content.length()}">0</span> chars
+                                    </span>
+                                    <span>
+                                        <i class="bi bi-geo me-1"></i>
+                                        Position: <span th:text="${chunk.startPosition}">0</span> - <span th:text="${chunk.endPosition}">0</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="chunk-content" th:text="${chunk.content}">
+                                Chunk content here...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="card mt-4 bg-light">
+        <div class="card-body">
+            <h6><i class="bi bi-question-circle me-2"></i>What is RAG?</h6>
+            <p class="mb-0 small text-muted">
+                <strong>Retrieval-Augmented Generation (RAG)</strong> is a technique that enhances AI quiz generation by 
+                chunking course content into smaller segments. When generating quizzes, relevant chunks are retrieved 
+                and provided as context to the AI model, ensuring questions are based on actual course material.
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

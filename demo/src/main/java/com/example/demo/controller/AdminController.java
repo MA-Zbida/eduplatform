@@ -33,6 +33,7 @@ import com.example.demo.service.DashboardService;
 import com.example.demo.service.EnrollmentService;
 import com.example.demo.service.FileStorageService;
 import com.example.demo.service.ModuleService;
+import com.example.demo.service.RAGService;
 import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
@@ -52,19 +53,22 @@ public class AdminController {
     private final DashboardService dashboardService;
     private final ModuleService moduleService;
     private final FileStorageService fileStorageService;
+    private final RAGService ragService;
 
     public AdminController(UserService userService,
                            CourseService courseService,
                            EnrollmentService enrollmentService,
                            DashboardService dashboardService,
                            ModuleService moduleService,
-                           FileStorageService fileStorageService) {
+                           FileStorageService fileStorageService,
+                           RAGService ragService) {
         this.userService = userService;
         this.courseService = courseService;
         this.enrollmentService = enrollmentService;
         this.dashboardService = dashboardService;
         this.moduleService = moduleService;
         this.fileStorageService = fileStorageService;
+        this.ragService = ragService;
     }
 
     // ========== Dashboard ==========
@@ -312,6 +316,25 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/courses/" + id;
+    }
+
+    @GetMapping("/courses/{id}/rag")
+    public String viewRAGOutput(@PathVariable Long id, Model model) {
+        Course course = courseService.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        
+        if (!course.isIndexed()) {
+            throw new IllegalStateException("Course has not been indexed for RAG yet.");
+        }
+        
+        var chunks = ragService.retrieveChunks(id);
+        var stats = ragService.getRAGStats(id);
+        
+        model.addAttribute("course", course);
+        model.addAttribute("chunks", chunks);
+        model.addAttribute("stats", stats);
+        
+        return "admin/courses/rag";
     }
 
     // ========== Enrollment Management ==========

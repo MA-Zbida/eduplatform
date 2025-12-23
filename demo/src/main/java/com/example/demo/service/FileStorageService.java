@@ -9,6 +9,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -24,6 +29,8 @@ import jakarta.annotation.PostConstruct;
  */
 @Service
 public class FileStorageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
 
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
@@ -138,5 +145,98 @@ public class FileStorageService {
         }
         Path filePath = this.fileStorageLocation.resolve(filename).normalize();
         return Files.exists(filePath);
+    }
+
+    /**
+     * Extract text content from a PDF file.
+     * Uses enhanced extraction settings for better handling of layouts and formulas.
+     *
+     * @param filename the PDF filename to extract text from
+     * @return the extracted text content, or empty string if extraction fails
+     */
+    public String extractTextFromPdf(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "";
+        }
+
+        Path filePath = this.fileStorageLocation.resolve(filename).normalize();
+        
+        if (!Files.exists(filePath)) {
+            logger.warn("PDF file not found for text extraction: {}", filename);
+            return "";
+        }
+
+        try (PDDocument document = Loader.loadPDF(filePath.toFile())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            
+            // Configure stripper for better text extraction
+            stripper.setSortByPosition(true);
+            stripper.setAddMoreFormatting(true);
+            
+            // Add paragraph breaks between sections
+            stripper.setParagraphStart("\n");
+            stripper.setParagraphEnd("\n\n");
+            stripper.setPageStart("\n");
+            stripper.setPageEnd("\n\n");
+            stripper.setLineSeparator("\n");
+            
+            // Extract text from all pages
+            String text = stripper.getText(document);
+            
+            // Post-process the text to improve readability
+            text = postProcessPdfText(text);
+            
+            logger.info("Extracted {} characters from PDF ({} pages): {}", 
+                    text.length(), document.getNumberOfPages(), filename);
+            return text;
+        } catch (IOException e) {
+            logger.error("Failed to extract text from PDF: {}", filename, e);
+            return "";
+        }
+    }
+
+    /**
+     * Post-process extracted PDF text to improve readability.
+     * Handles common PDF extraction artifacts and improves chunking compatibility.
+     */
+    private String postProcessPdfText(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        
+        // Remove excessive whitespace while preserving paragraph structure
+        text = text.replaceAll("[ \\t]+", " ");  // Multiple spaces to single space
+        text = text.replaceAll("(?m)^[ \\t]+", "");  // Leading whitespace on lines
+        text = text.replaceAll("(?m)[ \\t]+$", "");  // Trailing whitespace on lines
+        
+        // Normalize line endings
+        text = text.replaceAll("\\r\\n", "\n");
+        text = text.replaceAll("\\r", "\n");
+        
+        // Convert 3+ newlines to double newlines (paragraph breaks)
+        text = text.replaceAll("\\n{3,}", "\n\n");
+        
+        // Try to fix broken sentences (line ending without punctuation)
+        // This helps with PDFs that have hard line breaks mid-sentence
+        text = text.replaceAll("(?<![.!?:;,\\-])\\n(?=[a-z])", " ");
+        
+        // Clean up common PDF artifacts
+        text = text.replaceAll("\\u0000", "");  // Null characters
+        text = text.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", "");  // Control characters
+        
+        // Improve formula readability - add spacing around common operators
+        text = text.replaceAll("([a-zA-Z])([=<>≤≥≠+−×÷])([a-zA-Z0-9])", "$1 $2 $3");
+        
+        return text.trim();
+    }
+
+    /**
+     * Get the full path to a stored file.
+     *
+     * @param filename the filename
+     * @return the full path to the file
+     */
+    public Path getFilePath(String filename) {
+        return this.fileStorageLocation.resolve(filename).normalize();
     }
 }
