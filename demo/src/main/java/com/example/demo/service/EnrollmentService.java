@@ -110,4 +110,57 @@ public class EnrollmentService {
     public long countCompletedByStudent(Long studentId) {
         return enrollmentRepository.countByStudentIdAndStatus(studentId, EnrollmentStatus.COMPLETED);
     }
+
+    /**
+     * Mark a course as learned/completed by the student.
+     * This allows the student to take quizzes on this specific course.
+     */
+    public Enrollment markCourseAsLearned(Long studentId, Long courseId) {
+        Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Enrollment not found for student: " + studentId + " and course: " + courseId));
+        enrollment.markCourseAsLearned();
+        return enrollmentRepository.save(enrollment);
+    }
+
+    /**
+     * Check if a student has completed learning a specific course.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasCourseCompleted(Long studentId, Long courseId) {
+        return enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
+                .map(Enrollment::isCourseCompleted)
+                .orElse(false);
+    }
+
+    /**
+     * Get all courses that a student has marked as learned.
+     */
+    @Transactional(readOnly = true)
+    public List<Enrollment> findCompletedCoursesByStudent(Long studentId) {
+        return enrollmentRepository.findCompletedCoursesByStudentId(studentId);
+    }
+
+    /**
+     * Get enrollments for a student in a specific module.
+     */
+    @Transactional(readOnly = true)
+    public List<Enrollment> findByStudentAndModule(Long studentId, Long moduleId) {
+        return enrollmentRepository.findByStudentIdAndModuleId(studentId, moduleId);
+    }
+
+    /**
+     * Get completed courses for a student in a specific module.
+     */
+    @Transactional(readOnly = true)
+    public List<Enrollment> findCompletedByStudentAndModule(Long studentId, Long moduleId) {
+        return enrollmentRepository.findCompletedByStudentIdAndModuleId(studentId, moduleId);
+    }
+
+    /**
+     * Count completed courses for a student in a specific module.
+     */
+    @Transactional(readOnly = true)
+    public long countCompletedByStudentAndModule(Long studentId, Long moduleId) {
+        return enrollmentRepository.countCompletedByStudentIdAndModuleId(studentId, moduleId);
+    }
 }

@@ -48,6 +48,15 @@ public class Enrollment {
 
     private Integer progressPercentage = 0;
 
+    /**
+     * Indicates whether the student has finished reading/learning the course content.
+     * This is separate from quiz completion and is set when student marks the course as "learned".
+     */
+    @Column(nullable = false)
+    private boolean courseCompleted = false;
+
+    private LocalDateTime courseCompletedAt;
+
     @PrePersist
     protected void onCreate() {
         enrolledAt = LocalDateTime.now();
@@ -70,6 +79,15 @@ public class Enrollment {
 
     public void updateProgress(int percentage) {
         this.progressPercentage = Math.min(100, Math.max(0, percentage));
+    }
+
+    /**
+     * Mark the course content as learned/completed by the student.
+     * This allows the student to take quizzes on this specific course.
+     */
+    public void markCourseAsLearned() {
+        this.courseCompleted = true;
+        this.courseCompletedAt = LocalDateTime.now();
     }
 
     // Getters and Setters
@@ -127,6 +145,22 @@ public class Enrollment {
 
     public void setProgressPercentage(Integer progressPercentage) {
         this.progressPercentage = progressPercentage;
+    }
+
+    public boolean isCourseCompleted() {
+        return courseCompleted;
+    }
+
+    public void setCourseCompleted(boolean courseCompleted) {
+        this.courseCompleted = courseCompleted;
+    }
+
+    public LocalDateTime getCourseCompletedAt() {
+        return courseCompletedAt;
+    }
+
+    public void setCourseCompletedAt(LocalDateTime courseCompletedAt) {
+        this.courseCompletedAt = courseCompletedAt;
     }
 
     public boolean isCompleted() {

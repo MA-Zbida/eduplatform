@@ -32,4 +32,16 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     long countByStatus(@Param("status") CourseStatus status);
     
     boolean existsByTitleIgnoreCase(String title);
+
+    List<Course> findByModuleIdOrderByDisplayOrderAscTitleAsc(Long moduleId);
+
+    List<Course> findByModuleIdAndStatusOrderByDisplayOrderAscTitleAsc(Long moduleId, CourseStatus status);
+
+    @Query("SELECT c FROM Course c WHERE c.module.id = :moduleId AND c.status = 'PUBLISHED' AND c.indexed = true ORDER BY c.displayOrder ASC")
+    List<Course> findPublishedAndIndexedByModuleId(@Param("moduleId") Long moduleId);
+
+    @Query("SELECT c FROM Course c WHERE c.module IS NULL ORDER BY c.title ASC")
+    List<Course> findCoursesWithoutModule();
+
+    List<Course> findAllByOrderByModuleIdAscDisplayOrderAscTitleAsc();
 }

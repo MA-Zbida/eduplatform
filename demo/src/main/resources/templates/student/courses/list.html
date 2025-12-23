@@ -8,47 +8,108 @@
         <span class="badge bg-primary fs-6" th:text="${enrollments.size()} + ' courses'">0 courses</span>
     </div>
 
-    <div class="row">
-        <div th:each="enrollment : ${enrollments}" class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <span th:if="${enrollment.status.name() == 'IN_PROGRESS'}" class="badge bg-warning">In Progress</span>
-                        <span th:if="${enrollment.status.name() == 'COMPLETED'}" class="badge bg-success">Completed</span>
-                        <span th:if="${enrollment.course.indexed}" class="badge bg-info">AI Quiz Ready</span>
-                    </div>
-                    <h5 class="card-title" th:text="${enrollment.course.title}">Course Title</h5>
-                    <p th:if="${enrollment.course.description}" class="card-text text-muted small text-truncate" 
-                       th:text="${enrollment.course.description}">Description</p>
-                    
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Progress</small>
-                            <small th:text="${enrollment.progressPercentage} + '%'">0%</small>
+    <!-- Courses grouped by Module -->
+    <div th:if="${not #lists.isEmpty(enrollments)}">
+        <!-- Loop through modules -->
+        <div th:each="module : ${modules}" class="mb-4">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-folder me-2 text-primary"></i>
+                <h5 class="mb-0" th:text="${module.name}">Module Name</h5>
+                <span class="badge bg-secondary ms-2" th:text="${module.courses.size()} + ' courses'">0</span>
+            </div>
+            <p th:if="${module.description}" class="text-muted small mb-3" th:text="${module.description}">Module description</p>
+            
+            <div class="row">
+                <th:block th:each="course : ${module.courses}">
+                    <!-- Only show if student is enrolled -->
+                    <th:block th:each="enrollment : ${enrollments}" th:if="${enrollment.course.id == course.id}">
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span th:if="${enrollment.courseCompleted}" class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Learned
+                                        </span>
+                                        <span th:unless="${enrollment.courseCompleted}" class="badge bg-warning">In Progress</span>
+                                        <span th:if="${course.indexed}" class="badge bg-info">AI Quiz</span>
+                                    </div>
+                                    <h5 class="card-title" th:text="${course.title}">Course Title</h5>
+                                    <p th:if="${course.description}" class="card-text text-muted small text-truncate" 
+                                       th:text="${course.description}">Description</p>
+                                    
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Progress</small>
+                                            <small th:text="${enrollment.progressPercentage} + '%'">0%</small>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar progress-bar-custom" 
+                                                 th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white border-top-0">
+                                    <a th:href="@{/student/courses/{id}(id=${course.id})}" 
+                                       class="btn btn-primary w-100">
+                                        <i class="bi bi-arrow-right me-2"></i>Continue Learning
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar progress-bar-custom" 
-                                 th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-white border-top-0">
-                    <a th:href="@{/student/courses/{id}(id=${enrollment.course.id})}" 
-                       class="btn btn-primary w-100">
-                        <i class="bi bi-arrow-right me-2"></i>Continue Learning
-                    </a>
-                </div>
+                    </th:block>
+                </th:block>
             </div>
         </div>
+
+        <!-- Courses without module -->
+        <div class="mb-4">
+            <div class="row">
+                <th:block th:each="enrollment : ${enrollments}" th:if="${enrollment.course.module == null}">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span th:if="${enrollment.courseCompleted}" class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Learned
+                                    </span>
+                                    <span th:unless="${enrollment.courseCompleted}" class="badge bg-warning">In Progress</span>
+                                    <span th:if="${enrollment.course.indexed}" class="badge bg-info">AI Quiz</span>
+                                </div>
+                                <h5 class="card-title" th:text="${enrollment.course.title}">Course Title</h5>
+                                <p th:if="${enrollment.course.description}" class="card-text text-muted small text-truncate" 
+                                   th:text="${enrollment.course.description}">Description</p>
+                                
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Progress</small>
+                                        <small th:text="${enrollment.progressPercentage} + '%'">0%</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar progress-bar-custom" 
+                                             th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top-0">
+                                <a th:href="@{/student/courses/{id}(id=${enrollment.course.id})}" 
+                                   class="btn btn-primary w-100">
+                                    <i class="bi bi-arrow-right me-2"></i>Continue Learning
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </div>
         
-        <div th:if="${#lists.isEmpty(enrollments)}" class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
-                    <h4>No Courses Yet</h4>
-                    <p class="text-muted">You haven't been enrolled in any courses yet.</p>
-                    <p class="text-muted">Please contact your administrator to get enrolled.</p>
-                </div>
+    <div th:if="${#lists.isEmpty(enrollments)}" class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
+                <h4>No Courses Yet</h4>
+                <p class="text-muted">You haven't been enrolled in any courses yet.</p>
+                <p class="text-muted">Please contact your administrator to get enrolled.</p>
             </div>
         </div>
     </div>

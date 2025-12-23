@@ -35,4 +35,16 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     
     @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId AND e.status = :status")
     long countByStudentIdAndStatus(@Param("studentId") Long studentId, @Param("status") EnrollmentStatus status);
+
+    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.courseCompleted = true")
+    List<Enrollment> findCompletedCoursesByStudentId(@Param("studentId") Long studentId);
+
+    @Query("SELECT e FROM Enrollment e JOIN e.course c WHERE e.student.id = :studentId AND c.module.id = :moduleId")
+    List<Enrollment> findByStudentIdAndModuleId(@Param("studentId") Long studentId, @Param("moduleId") Long moduleId);
+
+    @Query("SELECT e FROM Enrollment e JOIN e.course c WHERE e.student.id = :studentId AND c.module.id = :moduleId AND e.courseCompleted = true")
+    List<Enrollment> findCompletedByStudentIdAndModuleId(@Param("studentId") Long studentId, @Param("moduleId") Long moduleId);
+
+    @Query("SELECT COUNT(e) FROM Enrollment e JOIN e.course c WHERE e.student.id = :studentId AND c.module.id = :moduleId AND e.courseCompleted = true")
+    long countCompletedByStudentIdAndModuleId(@Param("studentId") Long studentId, @Param("moduleId") Long moduleId);
 }

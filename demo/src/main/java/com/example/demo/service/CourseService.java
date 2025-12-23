@@ -5,13 +5,17 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.CourseDTO;
+import com.example.demo.entity.ContentType;
 import com.example.demo.entity.Course;
 import com.example.demo.entity.CourseStatus;
+import com.example.demo.entity.Module;
 import com.example.demo.entity.User;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.EnrollmentRepository;
+import com.example.demo.repository.ModuleRepository;
 import com.example.demo.security.SecurityUtils;
 
 /**
@@ -24,20 +28,30 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ModuleRepository moduleRepository;
     private final SecurityUtils securityUtils;
     private final RAGService ragService;
+    private final FileStorageService fileStorageService;
 
     public CourseService(CourseRepository courseRepository, 
                          EnrollmentRepository enrollmentRepository,
+                         ModuleRepository moduleRepository,
                          SecurityUtils securityUtils,
-                         RAGService ragService) {
+                         RAGService ragService,
+                         FileStorageService fileStorageService) {
         this.courseRepository = courseRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.moduleRepository = moduleRepository;
         this.securityUtils = securityUtils;
         this.ragService = ragService;
+        this.fileStorageService = fileStorageService;
     }
 
     public Course createCourse(CourseDTO dto) {
+        return createCourse(dto, null);
+    }
+
+    public Course createCourse(CourseDTO dto, MultipartFile pdfFile) {
         User currentUser = securityUtils.getCurrentUser();
         if (currentUser == null || !currentUser.isAdmin()) {
             throw new SecurityException("Only administrators can create courses");
@@ -46,20 +60,80 @@ public class CourseService {
         Course course = new Course();
         course.setTitle(dto.getTitle());
         course.setDescription(dto.getDescription());
-        course.setContent(dto.getContent());
         course.setCreatedBy(currentUser);
         course.setStatus(CourseStatus.DRAFT);
+        course.setDisplayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0);
+
+        // Handle content type
+        if (pdfFile != null && !pdfFile.isEmpty()) {
+            // PDF upload
+            String storedFilename = fileStorageService.storeFile(pdfFile);
+            course.setPdfFilename(storedFilename);
+            course.setPdfOriginalName(pdfFile.getOriginalFilename());
+            course.setContentType(ContentType.PDF);
+            // Set a placeholder content for PDF courses (required by entity constraint)
+            course.setContent("[PDF Content: " + pdfFile.getOriginalFilename() + "]");
+        } else {
+            // Text content
+            course.setContent(dto.getContent() != null ? dto.getContent() : "");
+            course.setContentType(ContentType.TEXT);
+        }
+
+        // Set module if provided
+        if (dto.getModuleId() != null) {
+            Module module = moduleRepository.findById(dto.getModuleId())
+                    .orElseThrow(() -> new IllegalArgumentException("Module not found: " + dto.getModuleId()));
+            course.setModule(module);
+        }
 
         return courseRepository.save(course);
     }
 
     public Course updateCourse(Long id, CourseDTO dto) {
+        return updateCourse(id, dto, null);
+    }
+
+    public Course updateCourse(Long id, CourseDTO dto, MultipartFile pdfFile) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found: " + id));
 
         course.setTitle(dto.getTitle());
         course.setDescription(dto.getDescription());
-        course.setContent(dto.getContent());
+        course.setDisplayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0);
+
+        // Handle PDF removal request
+        if (dto.isRemovePdf() && course.hasPdf()) {
+            fileStorageService.deleteFile(course.getPdfFilename());
+            course.setPdfFilename(null);
+            course.setPdfOriginalName(null);
+            course.setContentType(ContentType.TEXT);
+            course.setContent(dto.getContent() != null ? dto.getContent() : "");
+        }
+        // Handle new PDF upload
+        else if (pdfFile != null && !pdfFile.isEmpty()) {
+            // Delete old PDF if exists
+            if (course.hasPdf()) {
+                fileStorageService.deleteFile(course.getPdfFilename());
+            }
+            String storedFilename = fileStorageService.storeFile(pdfFile);
+            course.setPdfFilename(storedFilename);
+            course.setPdfOriginalName(pdfFile.getOriginalFilename());
+            course.setContentType(ContentType.PDF);
+            course.setContent("[PDF Content: " + pdfFile.getOriginalFilename() + "]");
+        }
+        // Update text content (only if not PDF type)
+        else if (course.getContentType() == ContentType.TEXT) {
+            course.setContent(dto.getContent() != null ? dto.getContent() : "");
+        }
+
+        // Update module
+        if (dto.getModuleId() != null) {
+            Module module = moduleRepository.findById(dto.getModuleId())
+                    .orElseThrow(() -> new IllegalArgumentException("Module not found: " + dto.getModuleId()));
+            course.setModule(module);
+        } else {
+            course.setModule(null);
+        }
 
         // If content changed, mark as not indexed
         if (course.isIndexed()) {
@@ -72,6 +146,12 @@ public class CourseService {
     public void deleteCourse(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found: " + id));
+        
+        // Delete PDF file if exists
+        if (course.hasPdf()) {
+            fileStorageService.deleteFile(course.getPdfFilename());
+        }
+        
         courseRepository.delete(course);
     }
 
@@ -123,6 +203,26 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
+    public List<Course> findByModule(Long moduleId) {
+        return courseRepository.findByModuleIdOrderByDisplayOrderAscTitleAsc(moduleId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Course> findPublishedByModule(Long moduleId) {
+        return courseRepository.findByModuleIdAndStatusOrderByDisplayOrderAscTitleAsc(moduleId, CourseStatus.PUBLISHED);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Course> findCoursesWithoutModule() {
+        return courseRepository.findCoursesWithoutModule();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Course> findAllCoursesOrdered() {
+        return courseRepository.findAllByOrderByModuleIdAscDisplayOrderAscTitleAsc();
+    }
+
+    @Transactional(readOnly = true)
     public boolean isStudentEnrolled(Long studentId, Long courseId) {
         return enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId);
     }
@@ -138,13 +238,20 @@ public class CourseService {
     }
 
     public CourseDTO toDTO(Course course) {
-        return new CourseDTO(
+        CourseDTO dto = new CourseDTO(
                 course.getId(),
                 course.getTitle(),
                 course.getDescription(),
                 course.getContent(),
                 course.getStatus().name(),
-                course.isIndexed()
+                course.isIndexed(),
+                course.getModule() != null ? course.getModule().getId() : null,
+                course.getModule() != null ? course.getModule().getName() : null,
+                course.getDisplayOrder()
         );
+        dto.setContentType(course.getContentType().name());
+        dto.setPdfFilename(course.getPdfFilename());
+        dto.setPdfOriginalName(course.getPdfOriginalName());
+        return dto;
     }
 }

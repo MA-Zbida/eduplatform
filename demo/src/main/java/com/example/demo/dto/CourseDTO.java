@@ -17,12 +17,23 @@ public class CourseDTO {
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
 
-    @NotBlank(message = "Course content is required")
     private String content;
 
     private String status;
 
     private boolean indexed;
+
+    private Long moduleId;
+
+    private String moduleName;
+
+    private Integer displayOrder = 0;
+
+    // PDF-related fields
+    private String contentType = "TEXT";
+    private String pdfFilename;
+    private String pdfOriginalName;
+    private boolean removePdf = false;
 
     // Constructors
     public CourseDTO() {}
@@ -34,6 +45,19 @@ public class CourseDTO {
         this.content = content;
         this.status = status;
         this.indexed = indexed;
+    }
+
+    public CourseDTO(Long id, String title, String description, String content, String status, boolean indexed,
+                     Long moduleId, String moduleName, Integer displayOrder) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.content = content;
+        this.status = status;
+        this.indexed = indexed;
+        this.moduleId = moduleId;
+        this.moduleName = moduleName;
+        this.displayOrder = displayOrder;
     }
 
     // Getters and Setters
@@ -83,5 +107,62 @@ public class CourseDTO {
 
     public void setIndexed(boolean indexed) {
         this.indexed = indexed;
+    }
+
+    public Long getModuleId() {
+        return moduleId;
+    }
+
+    public void setModuleId(Long moduleId) {
+        this.moduleId = moduleId;
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
+    }
+
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
+    // PDF-related getters and setters
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getPdfFilename() {
+        return pdfFilename;
+    }
+
+    public void setPdfFilename(String pdfFilename) {
+        this.pdfFilename = pdfFilename;
+    }
+
+    public String getPdfOriginalName() {
+        return pdfOriginalName;
+    }
+
+    public void setPdfOriginalName(String pdfOriginalName) {
+        this.pdfOriginalName = pdfOriginalName;
+    }
+
+    public boolean isRemovePdf() {
+        return removePdf;
+    }
+
+    public void setRemovePdf(boolean removePdf) {
+        this.removePdf = removePdf;
     }
 }

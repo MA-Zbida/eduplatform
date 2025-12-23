@@ -139,6 +139,12 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" th:classappend="${currentPage == 'admin-modules'} ? 'active'" 
+                                   th:href="@{/admin/modules}">
+                                    <i class="bi bi-folder me-2"></i>Modules
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" th:classappend="${currentPage == 'admin-students'} ? 'active'" 
                                    th:href="@{/admin/students}">
                                     <i class="bi bi-people me-2"></i>Students

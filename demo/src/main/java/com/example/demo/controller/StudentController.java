@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,6 +24,7 @@ import com.example.demo.dto.QuizSubmissionDTO;
 import com.example.demo.entity.Course;
 import com.example.demo.entity.DifficultyLevel;
 import com.example.demo.entity.Enrollment;
+import com.example.demo.entity.Module;
 import com.example.demo.entity.Question;
 import com.example.demo.entity.Quiz;
 import com.example.demo.entity.QuizResult;
@@ -28,6 +33,8 @@ import com.example.demo.service.AgentService;
 import com.example.demo.service.CourseService;
 import com.example.demo.service.DashboardService;
 import com.example.demo.service.EnrollmentService;
+import com.example.demo.service.FileStorageService;
+import com.example.demo.service.ModuleService;
 import com.example.demo.service.QuizService;
 
 /**
@@ -45,19 +52,25 @@ public class StudentController {
     private final QuizService quizService;
     private final DashboardService dashboardService;
     private final AgentService agentService;
+    private final ModuleService moduleService;
+    private final FileStorageService fileStorageService;
 
     public StudentController(SecurityUtils securityUtils,
                              CourseService courseService,
                              EnrollmentService enrollmentService,
                              QuizService quizService,
                              DashboardService dashboardService,
-                             AgentService agentService) {
+                             AgentService agentService,
+                             ModuleService moduleService,
+                             FileStorageService fileStorageService) {
         this.securityUtils = securityUtils;
         this.courseService = courseService;
         this.enrollmentService = enrollmentService;
         this.quizService = quizService;
         this.dashboardService = dashboardService;
         this.agentService = agentService;
+        this.moduleService = moduleService;
+        this.fileStorageService = fileStorageService;
     }
 
     // ========== Dashboard ==========
@@ -82,7 +95,9 @@ public class StudentController {
     public String listCourses(Model model) {
         Long studentId = securityUtils.getCurrentUserId();
         List<Enrollment> enrollments = enrollmentService.findByStudent(studentId);
+        List<Module> modules = moduleService.findActiveModulesWithCourses();
         model.addAttribute("enrollments", enrollments);
+        model.addAttribute("modules", modules);
         return "student/courses/list";
     }
 
@@ -108,7 +123,57 @@ public class StudentController {
         model.addAttribute("quizzes", quizzes);
         model.addAttribute("recommendations", recommendations);
         model.addAttribute("difficulties", DifficultyLevel.values());
+        model.addAttribute("canTakeQuiz", enrollment.isCourseCompleted() && course.isIndexed());
         return "student/courses/view";
+    }
+
+    /**
+     * Mark a course as learned/completed.
+     * This enables the student to take quizzes on this specific course.
+     */
+    @PostMapping("/courses/{id}/complete")
+    public String markCourseAsLearned(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Long studentId = securityUtils.getCurrentUserId();
+
+        // Verify enrollment
+        if (!enrollmentService.isEnrolled(studentId, id)) {
+            redirectAttributes.addFlashAttribute("error", "You are not enrolled in this course.");
+            return "redirect:/student/courses";
+        }
+
+        try {
+            enrollmentService.markCourseAsLearned(studentId, id);
+            redirectAttributes.addFlashAttribute("success", "Course marked as completed! You can now take quizzes on this course.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to mark course as completed: " + e.getMessage());
+        }
+
+        return "redirect:/student/courses/" + id;
+    }
+
+    @GetMapping("/courses/{id}/pdf")
+    public ResponseEntity<Resource> servePdf(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Long studentId = securityUtils.getCurrentUserId();
+
+        // Verify enrollment
+        if (!enrollmentService.isEnrolled(studentId, id)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Course course = courseService.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        
+        if (!course.hasPdf()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Resource resource = fileStorageService.loadFileAsResource(course.getPdfFilename());
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, 
+                        "inline; filename=\"" + course.getPdfOriginalName() + "\"")
+                .body(resource);
     }
 
     // ========== Quizzes ==========
@@ -132,6 +197,12 @@ public class StudentController {
         if (!enrollmentService.isEnrolled(studentId, courseId)) {
             redirectAttributes.addFlashAttribute("error", "You are not enrolled in this course.");
             return "redirect:/student/courses";
+        }
+
+        // Verify course has been learned/completed
+        if (!enrollmentService.hasCourseCompleted(studentId, courseId)) {
+            redirectAttributes.addFlashAttribute("error", "You must complete learning this course before taking a quiz. Click 'Mark as Learned' when you're ready.");
+            return "redirect:/student/courses/" + courseId;
         }
 
         try {

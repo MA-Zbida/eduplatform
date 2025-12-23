@@ -57,6 +57,17 @@ public class Course {
     @Column(nullable = false)
     private boolean indexed = false;
 
+    // PDF content fields
+    @Column(name = "pdf_filename")
+    private String pdfFilename;
+
+    @Column(name = "pdf_original_name")
+    private String pdfOriginalName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "content_type", nullable = false)
+    private ContentType contentType = ContentType.TEXT;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -69,6 +80,13 @@ public class Course {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_id")
+    private Module module;
+
+    @Column(name = "display_order")
+    private Integer displayOrder = 0;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Enrollment> enrollments = new HashSet<>();
@@ -102,7 +120,18 @@ public class Course {
 
     // Business methods
     public boolean canBePublished() {
-        return content != null && !content.isBlank() && status == CourseStatus.DRAFT;
+        // Can publish if has text content OR has PDF file
+        boolean hasTextContent = content != null && !content.isBlank();
+        boolean hasPdfContent = pdfFilename != null && !pdfFilename.isBlank();
+        return (hasTextContent || hasPdfContent) && status == CourseStatus.DRAFT;
+    }
+
+    public boolean hasPdf() {
+        return pdfFilename != null && !pdfFilename.isBlank();
+    }
+
+    public boolean hasTextContent() {
+        return content != null && !content.isBlank();
     }
 
     public void publish() {
@@ -230,7 +259,48 @@ public class Course {
         this.quizzes = quizzes;
     }
 
+    public Module getModule() {
+        return module;
+    }
+
+    public void setModule(Module module) {
+        this.module = module;
+    }
+
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
     public boolean isPublished() {
         return status == CourseStatus.PUBLISHED;
+    }
+
+    // PDF-related getters and setters
+    public String getPdfFilename() {
+        return pdfFilename;
+    }
+
+    public void setPdfFilename(String pdfFilename) {
+        this.pdfFilename = pdfFilename;
+    }
+
+    public String getPdfOriginalName() {
+        return pdfOriginalName;
+    }
+
+    public void setPdfOriginalName(String pdfOriginalName) {
+        this.pdfOriginalName = pdfOriginalName;
+    }
+
+    public ContentType getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(ContentType contentType) {
+        this.contentType = contentType;
     }
 }
