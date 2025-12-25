@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle=${teacher.id != null ? 'Edit Teacher' : 'New Teacher'}, content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-person-badge me-2"></i>
+                <span th:text="${teacher.id != null ? 'Edit Teacher' : 'Create New Teacher'}">Teacher Form</span>
+            </h1>
+            <a th:href="@{/superadmin/teachers}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form
+                    th:action="${teacher.id != null ? '/superadmin/teachers/' + teacher.id + '/edit' : '/superadmin/teachers/new'}"
+                    th:object="${teacher}" method="post">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fullName" class="form-label">Full Name <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fullName" th:field="*{fullName}"
+                                th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}"
+                                th:errors="*{fullName}"></div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" th:field="*{username}"
+                                th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}"
+                                th:errors="*{username}"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" th:field="*{email}"
+                                th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">
+                                Password
+                                <span class="text-danger" th:if="${teacher.id == null}">*</span>
+                                <small class="text-muted" th:if="${teacher.id != null}">(leave blank to keep
+                                    current)</small>
+                            </label>
+                            <input type="password" class="form-control" id="password" th:field="*{password}"
+                                th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                th:required="${teacher.id == null}">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                                th:errors="*{password}"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enabled" th:field="*{enabled}">
+                            <label class="form-check-label" for="enabled">
+                                Account Enabled
+                            </label>
+                        </div>
+                        <small class="text-muted">Disabled accounts cannot log in</small>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a th:href="@{/superadmin/teachers}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <span th:text="${teacher.id != null ? 'Update Teacher' : 'Create Teacher'}">Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

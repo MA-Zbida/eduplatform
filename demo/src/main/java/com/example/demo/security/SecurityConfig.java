@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 /**
  * Spring Security configuration class.
- * Implements strict role-based access control for ADMINISTRATOR and STUDENT roles.
+ * Implements strict role-based access control for ADMINISTRATOR, TEACHER, and STUDENT roles.
  */
 @Configuration
 @EnableWebSecurity
@@ -36,8 +36,10 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/css/**", "/js/**", "/images/**", "/webjars/**", "/error").permitAll()
                         // H2 Console for development
                         .requestMatchers("/h2-console/**").permitAll()
-                        // Admin-only endpoints
-                        .requestMatchers("/admin/**").hasRole("ADMINISTRATOR")
+                        // Super Admin endpoints (ADMINISTRATOR role)
+                        .requestMatchers("/superadmin/**").hasRole("ADMINISTRATOR")
+                        // Teacher endpoints (TEACHER role)
+                        .requestMatchers("/teacher/**").hasRole("TEACHER")
                         // Student-only endpoints
                         .requestMatchers("/student/**").hasRole("STUDENT")
                         // All other requests require authentication
@@ -79,7 +81,10 @@ public class SecurityConfig {
             
             for (var authority : authorities) {
                 if (authority.getAuthority().equals("ROLE_ADMINISTRATOR")) {
-                    redirectUrl = "/admin/dashboard";
+                    redirectUrl = "/superadmin/dashboard";
+                    break;
+                } else if (authority.getAuthority().equals("ROLE_TEACHER")) {
+                    redirectUrl = "/teacher/dashboard";
                     break;
                 } else if (authority.getAuthority().equals("ROLE_STUDENT")) {
                     redirectUrl = "/student/dashboard";

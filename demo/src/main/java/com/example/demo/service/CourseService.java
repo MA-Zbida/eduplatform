@@ -53,8 +53,8 @@ public class CourseService {
 
     public Course createCourse(CourseDTO dto, MultipartFile pdfFile) {
         User currentUser = securityUtils.getCurrentUser();
-        if (currentUser == null || !currentUser.isAdmin()) {
-            throw new SecurityException("Only administrators can create courses");
+        if (currentUser == null || (!currentUser.isAdmin() && !currentUser.isTeacher())) {
+            throw new SecurityException("Only administrators or teachers can create courses");
         }
 
         Course course = new Course();
@@ -220,6 +220,11 @@ public class CourseService {
     @Transactional(readOnly = true)
     public List<Course> findAllCoursesOrdered() {
         return courseRepository.findAllByOrderByModuleIdAscDisplayOrderAscTitleAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Course> findByTeacher(Long teacherId) {
+        return courseRepository.findByCreatedByIdOrderByModuleIdAscDisplayOrderAscTitleAsc(teacherId);
     }
 
     @Transactional(readOnly = true)

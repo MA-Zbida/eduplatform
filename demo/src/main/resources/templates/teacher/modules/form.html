@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle=${module.id != null ? 'Edit Module' : 'Create Module'}, content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/teacher/modules}">Modules</a></li>
+                    <li class="breadcrumb-item active" th:text="${module.id != null ? 'Edit' : 'Create'}">Create</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0" th:text="${module.id != null ? 'Edit Module' : 'Create New Module'}">Create New Module
+            </h1>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <form
+                            th:action="${module.id != null ? '/teacher/modules/' + module.id + '/edit' : '/teacher/modules/new'}"
+                            method="post" th:object="${module}">
+
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Module Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" th:field="*{name}"
+                                    th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"
+                                    placeholder="e.g., Introduction to AI">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                    Name error</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" th:field="*{description}" rows="3"
+                                    th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"
+                                    placeholder="Brief description of what this module covers..."></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
+                                    th:errors="*{description}">Description error</div>
+                                <div class="form-text">Optional. Maximum 1000 characters.</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="displayOrder" class="form-label">Display Order</label>
+                                    <input type="number" class="form-control" id="displayOrder"
+                                        th:field="*{displayOrder}" min="0" placeholder="0">
+                                    <div class="form-text">Lower numbers appear first. Default is 0.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label d-block">Status</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="active"
+                                            th:field="*{active}">
+                                        <label class="form-check-label" for="active">Active</label>
+                                    </div>
+                                    <div class="form-text">Inactive modules are hidden from students.</div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    <span th:text="${module.id != null ? 'Update Module' : 'Create Module'}">Create
+                                        Module</span>
+                                </button>
+                                <a th:href="@{/teacher/modules}" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle me-2"></i>Tips
+                    </div>
+                    <div class="card-body">
+                        <ul class="small text-muted mb-0">
+                            <li class="mb-2">Modules help organize courses into logical groups.</li>
+                            <li class="mb-2">Use descriptive names like "Machine Learning Basics" or "Web Development
+                                101".</li>
+                            <li class="mb-2">Set display order to control how modules appear to students.</li>
+                            <li>Inactive modules and their courses won't be visible to students.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

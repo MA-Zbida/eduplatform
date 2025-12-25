@@ -20,6 +20,10 @@ public interface ModuleRepository extends JpaRepository<Module, Long> {
 
     List<Module> findAllByOrderByDisplayOrderAscNameAsc();
 
+    List<Module> findByCreatedByIdOrderByDisplayOrderAscNameAsc(Long createdById);
+
+    List<Module> findByCreatedByIdAndActiveOrderByDisplayOrderAscNameAsc(Long createdById, boolean active);
+
     Optional<Module> findByName(String name);
 
     boolean existsByName(String name);

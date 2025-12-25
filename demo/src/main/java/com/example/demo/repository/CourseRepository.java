@@ -19,6 +19,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByStatus(CourseStatus status);
     
     List<Course> findByCreatedById(Long createdById);
+
+    List<Course> findByCreatedByIdOrderByModuleIdAscDisplayOrderAscTitleAsc(Long createdById);
     
     List<Course> findByStatusAndIndexed(CourseStatus status, boolean indexed);
     

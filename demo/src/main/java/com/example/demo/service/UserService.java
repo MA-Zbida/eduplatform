@@ -14,7 +14,7 @@ import com.example.demo.repository.UserRepository;
 
 /**
  * Service class for User entity operations.
- * Handles user management including CRUD operations for students.
+ * Handles user management including CRUD operations for students and teachers.
  */
 @Service
 @Transactional
@@ -49,6 +49,11 @@ public class UserService {
 
     public User createStudent(UserDTO dto) {
         dto.setRole(Role.STUDENT);
+        return createUser(dto);
+    }
+
+    public User createTeacher(UserDTO dto) {
+        dto.setRole(Role.TEACHER);
         return createUser(dto);
     }
 
@@ -103,6 +108,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public List<User> findAllTeachers() {
+        return userRepository.findByRole(Role.TEACHER);
+    }
+
+    @Transactional(readOnly = true)
     public List<User> findAllUsers() {
         return userRepository.findAll();
     }
@@ -115,6 +125,11 @@ public class UserService {
     @Transactional(readOnly = true)
     public long countStudents() {
         return userRepository.countByRole(Role.STUDENT);
+    }
+
+    @Transactional(readOnly = true)
+    public long countTeachers() {
+        return userRepository.countByRole(Role.TEACHER);
     }
 
     public UserDTO toDTO(User user) {

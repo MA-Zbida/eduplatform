@@ -63,20 +63,41 @@ public class DataLoader implements CommandLineRunner {
             return;
         }
 
-        // Create Administrator
+        // Create Super Administrator
         User admin = createAdmin();
+        
+        // Create Sample Teachers
+        List<User> teachers = createTeachers();
         
         // Create Sample Students
         List<User> students = createStudents();
         
-        // Create Modules
-        List<Module> modules = createModules(admin);
+        // Create Modules and Courses for each teacher (each teacher owns their own content)
+        List<Course> allCourses = new ArrayList<>();
         
-        // Create Sample Courses
-        List<Course> courses = createCourses(admin, modules);
+        // Teacher 1: AI & Machine Learning Module with 2 courses
+        User teacher1 = teachers.get(0);
+        Module aiModule = createModuleForTeacher(teacher1, "Artificial Intelligence & Machine Learning",
+            "Master the fundamentals of AI, from machine learning to deep learning and neural networks.", 1);
+        List<Course> teacher1Courses = createAICoursesForTeacher(teacher1, aiModule);
+        allCourses.addAll(teacher1Courses);
         
-        // Create Enrollments
-        createEnrollments(students, courses);
+        // Teacher 2: Competitive Programming Module with 2 courses
+        User teacher2 = teachers.get(1);
+        Module cpModule = createModuleForTeacher(teacher2, "Competitive Programming",
+            "Learn essential algorithms and data structures for competitive programming and technical interviews.", 2);
+        List<Course> teacher2Courses = createCPCoursesForTeacher(teacher2, cpModule);
+        allCourses.addAll(teacher2Courses);
+        
+        // Teacher 3: Web Development Module with 2 courses
+        User teacher3 = teachers.get(2);
+        Module webModule = createModuleForTeacher(teacher3, "Web Development",
+            "Learn modern web development from frontend to backend, including HTML, CSS, JavaScript, and server-side technologies.", 3);
+        List<Course> teacher3Courses = createWebCoursesForTeacher(teacher3, webModule);
+        allCourses.addAll(teacher3Courses);
+        
+        // Create Enrollments (students enroll with different teachers)
+        createEnrollments(students, allCourses, teachers);
 
         log.info("===========================================");
         log.info("   DATA INITIALIZATION COMPLETE");
@@ -84,8 +105,15 @@ public class DataLoader implements CommandLineRunner {
         log.info("");
         log.info("   DEMO CREDENTIALS:");
         log.info("   -----------------");
-        log.info("   Admin:   admin / admin123");
-        log.info("   Students: student1-student10 / student123");
+        log.info("   Super Admin: admin / admin123");
+        log.info("   Teachers:    teacher1-teacher3 / teacher123");
+        log.info("   Students:    student1-student10 / student123");
+        log.info("");
+        log.info("   TEACHER MODULES:");
+        log.info("   -----------------");
+        log.info("   Teacher 1 (Dr. Sarah Mitchell): AI & Machine Learning");
+        log.info("   Teacher 2 (Prof. James Cooper): Competitive Programming");
+        log.info("   Teacher 3 (Dr. Emily Watson): Web Development");
         log.info("");
         log.info("===========================================");
     }
@@ -95,15 +123,42 @@ public class DataLoader implements CommandLineRunner {
         admin.setUsername("admin");
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setEmail("admin@eduplatform.com");
-        admin.setFullName("System Administrator");
+        admin.setFullName("Platform Administrator");
         admin.setRole(Role.ADMINISTRATOR);
         admin.setEnabled(true);
         admin.setCreatedAt(LocalDateTime.now());
         
         userRepository.save(admin);
-        log.info("Created administrator: admin");
+        log.info("Created super administrator: admin");
         
         return admin;
+    }
+
+    private List<User> createTeachers() {
+        List<User> teachers = new ArrayList<>();
+        
+        String[][] teacherData = {
+            {"teacher1", "Dr. Sarah Mitchell", "sarah.mitchell@eduplatform.com"},
+            {"teacher2", "Prof. James Cooper", "james.cooper@eduplatform.com"},
+            {"teacher3", "Dr. Emily Watson", "emily.watson@eduplatform.com"}
+        };
+        
+        for (int i = 0; i < teacherData.length; i++) {
+            User teacher = new User();
+            teacher.setUsername(teacherData[i][0]);
+            teacher.setPassword(passwordEncoder.encode("teacher123"));
+            teacher.setEmail(teacherData[i][2]);
+            teacher.setFullName(teacherData[i][1]);
+            teacher.setRole(Role.TEACHER);
+            teacher.setEnabled(true);
+            teacher.setCreatedAt(LocalDateTime.now().minusDays(i));
+            teachers.add(teacher);
+        }
+
+        List<User> savedTeachers = userRepository.saveAll(teachers);
+        log.info("Created {} sample teachers", savedTeachers.size());
+        
+        return savedTeachers;
     }
 
     private List<User> createStudents() {
@@ -130,38 +185,25 @@ public class DataLoader implements CommandLineRunner {
         return savedStudents;
     }
 
-    private List<Module> createModules(User admin) {
-        Module aiModule = new Module();
-        aiModule.setName("Artificial Intelligence");
-        aiModule.setDescription("Master the fundamentals of AI, from machine learning to deep learning, reinforcement learning, and natural language processing.");
-        aiModule.setDisplayOrder(1);
-        aiModule.setActive(true);
-        aiModule.setCreatedBy(admin);
-        aiModule.setCreatedAt(LocalDateTime.now());
-
-        Module cpModule = new Module();
-        cpModule.setName("Competitive Programming");
-        cpModule.setDescription("Learn essential algorithms and data structures for competitive programming and technical interviews.");
-        cpModule.setDisplayOrder(2);
-        cpModule.setActive(true);
-        cpModule.setCreatedBy(admin);
-        cpModule.setCreatedAt(LocalDateTime.now());
-
-        List<Module> modules = moduleRepository.saveAll(List.of(aiModule, cpModule));
-        log.info("Created {} modules", modules.size());
+    private Module createModuleForTeacher(User teacher, String name, String description, int displayOrder) {
+        Module module = new Module();
+        module.setName(name);
+        module.setDescription(description);
+        module.setDisplayOrder(displayOrder);
+        module.setActive(true);
+        module.setCreatedBy(teacher);
+        module.setCreatedAt(LocalDateTime.now());
         
-        return modules;
+        Module savedModule = moduleRepository.save(module);
+        log.info("Created module '{}' for teacher '{}'", name, teacher.getFullName());
+        
+        return savedModule;
     }
 
-    private List<Course> createCourses(User admin, List<Module> modules) {
-        Module aiModule = modules.get(0);
-        Module cpModule = modules.get(1);
+    private List<Course> createAICoursesForTeacher(User teacher, Module module) {
+        List<Course> courses = new ArrayList<>();
         
-        List<Course> allCourses = new ArrayList<>();
-        
-        // === AI MODULE COURSES ===
-        
-        // Machine Learning Course
+        // Course 1: Machine Learning Fundamentals
         Course mlCourse = new Course();
         mlCourse.setTitle("Machine Learning Fundamentals");
         mlCourse.setDescription("Learn the core concepts of machine learning including supervised learning, unsupervised learning, and model evaluation.");
@@ -170,12 +212,12 @@ public class DataLoader implements CommandLineRunner {
         mlCourse.setIndexed(true);
         mlCourse.setCreatedAt(LocalDateTime.now());
         mlCourse.setPublishedAt(LocalDateTime.now());
-        mlCourse.setCreatedBy(admin);
-        mlCourse.setModule(aiModule);
+        mlCourse.setCreatedBy(teacher);
+        mlCourse.setModule(module);
         mlCourse.setDisplayOrder(1);
-        allCourses.add(mlCourse);
+        courses.add(mlCourse);
 
-        // Deep Learning Course
+        // Course 2: Deep Learning & Neural Networks
         Course dlCourse = new Course();
         dlCourse.setTitle("Deep Learning & Neural Networks");
         dlCourse.setDescription("Dive deep into neural networks, CNNs, RNNs, and modern deep learning architectures.");
@@ -184,42 +226,27 @@ public class DataLoader implements CommandLineRunner {
         dlCourse.setIndexed(true);
         dlCourse.setCreatedAt(LocalDateTime.now());
         dlCourse.setPublishedAt(LocalDateTime.now());
-        dlCourse.setCreatedBy(admin);
-        dlCourse.setModule(aiModule);
+        dlCourse.setCreatedBy(teacher);
+        dlCourse.setModule(module);
         dlCourse.setDisplayOrder(2);
-        allCourses.add(dlCourse);
+        courses.add(dlCourse);
 
-        // Reinforcement Learning Course
-        Course rlCourse = new Course();
-        rlCourse.setTitle("Reinforcement Learning");
-        rlCourse.setDescription("Master reinforcement learning concepts including Q-learning, policy gradients, and deep RL.");
-        rlCourse.setContent(getRLContent());
-        rlCourse.setStatus(CourseStatus.PUBLISHED);
-        rlCourse.setIndexed(true);
-        rlCourse.setCreatedAt(LocalDateTime.now());
-        rlCourse.setPublishedAt(LocalDateTime.now());
-        rlCourse.setCreatedBy(admin);
-        rlCourse.setModule(aiModule);
-        rlCourse.setDisplayOrder(3);
-        allCourses.add(rlCourse);
+        List<Course> savedCourses = courseRepository.saveAll(courses);
+        log.info("Created {} AI courses for teacher '{}'", savedCourses.size(), teacher.getFullName());
+        
+        // Index courses for RAG
+        for (Course course : savedCourses) {
+            ragService.indexCourse(course);
+            log.info("Indexed course for RAG: {}", course.getTitle());
+        }
+        
+        return savedCourses;
+    }
 
-        // NLP Course
-        Course nlpCourse = new Course();
-        nlpCourse.setTitle("Natural Language Processing");
-        nlpCourse.setDescription("Explore NLP techniques from text processing to transformers and large language models.");
-        nlpCourse.setContent(getNLPContent());
-        nlpCourse.setStatus(CourseStatus.PUBLISHED);
-        nlpCourse.setIndexed(true);
-        nlpCourse.setCreatedAt(LocalDateTime.now());
-        nlpCourse.setPublishedAt(LocalDateTime.now());
-        nlpCourse.setCreatedBy(admin);
-        nlpCourse.setModule(aiModule);
-        nlpCourse.setDisplayOrder(4);
-        allCourses.add(nlpCourse);
-
-        // === COMPETITIVE PROGRAMMING MODULE COURSES ===
-
-        // Sorting Algorithms Course
+    private List<Course> createCPCoursesForTeacher(User teacher, Module module) {
+        List<Course> courses = new ArrayList<>();
+        
+        // Course 1: Sorting Algorithms
         Course sortingCourse = new Course();
         sortingCourse.setTitle("Sorting Algorithms");
         sortingCourse.setDescription("Master essential sorting algorithms from bubble sort to quicksort and their time complexities.");
@@ -228,26 +255,12 @@ public class DataLoader implements CommandLineRunner {
         sortingCourse.setIndexed(true);
         sortingCourse.setCreatedAt(LocalDateTime.now());
         sortingCourse.setPublishedAt(LocalDateTime.now());
-        sortingCourse.setCreatedBy(admin);
-        sortingCourse.setModule(cpModule);
+        sortingCourse.setCreatedBy(teacher);
+        sortingCourse.setModule(module);
         sortingCourse.setDisplayOrder(1);
-        allCourses.add(sortingCourse);
+        courses.add(sortingCourse);
 
-        // Sliding Window Course
-        Course slidingWindowCourse = new Course();
-        slidingWindowCourse.setTitle("Sliding Window Technique");
-        slidingWindowCourse.setDescription("Learn the sliding window pattern for solving array and string problems efficiently.");
-        slidingWindowCourse.setContent(getSlidingWindowContent());
-        slidingWindowCourse.setStatus(CourseStatus.PUBLISHED);
-        slidingWindowCourse.setIndexed(true);
-        slidingWindowCourse.setCreatedAt(LocalDateTime.now());
-        slidingWindowCourse.setPublishedAt(LocalDateTime.now());
-        slidingWindowCourse.setCreatedBy(admin);
-        slidingWindowCourse.setModule(cpModule);
-        slidingWindowCourse.setDisplayOrder(2);
-        allCourses.add(slidingWindowCourse);
-
-        // Dynamic Programming Course
+        // Course 2: Dynamic Programming
         Course dpCourse = new Course();
         dpCourse.setTitle("Dynamic Programming");
         dpCourse.setDescription("Master dynamic programming from basic concepts to advanced optimization techniques.");
@@ -256,90 +269,178 @@ public class DataLoader implements CommandLineRunner {
         dpCourse.setIndexed(true);
         dpCourse.setCreatedAt(LocalDateTime.now());
         dpCourse.setPublishedAt(LocalDateTime.now());
-        dpCourse.setCreatedBy(admin);
-        dpCourse.setModule(cpModule);
-        dpCourse.setDisplayOrder(3);
-        allCourses.add(dpCourse);
+        dpCourse.setCreatedBy(teacher);
+        dpCourse.setModule(module);
+        dpCourse.setDisplayOrder(2);
+        courses.add(dpCourse);
 
-        // Graph Algorithms Course
-        Course graphCourse = new Course();
-        graphCourse.setTitle("Graph Algorithms");
-        graphCourse.setDescription("Learn graph representations, traversals, shortest paths, and advanced graph algorithms.");
-        graphCourse.setContent(getGraphContent());
-        graphCourse.setStatus(CourseStatus.PUBLISHED);
-        graphCourse.setIndexed(true);
-        graphCourse.setCreatedAt(LocalDateTime.now());
-        graphCourse.setPublishedAt(LocalDateTime.now());
-        graphCourse.setCreatedBy(admin);
-        graphCourse.setModule(cpModule);
-        graphCourse.setDisplayOrder(4);
-        allCourses.add(graphCourse);
-
-        List<Course> courses = courseRepository.saveAll(allCourses);
-        log.info("Created {} sample courses", courses.size());
+        List<Course> savedCourses = courseRepository.saveAll(courses);
+        log.info("Created {} Competitive Programming courses for teacher '{}'", savedCourses.size(), teacher.getFullName());
         
-        // Index published courses for RAG
-        for (Course course : courses) {
-            if (course.getStatus() == CourseStatus.PUBLISHED && course.isIndexed()) {
-                ragService.indexCourse(course);
-                log.info("Indexed course for RAG: {}", course.getTitle());
-            }
+        // Index courses for RAG
+        for (Course course : savedCourses) {
+            ragService.indexCourse(course);
+            log.info("Indexed course for RAG: {}", course.getTitle());
         }
         
-        return courses;
+        return savedCourses;
     }
 
-    private void createEnrollments(List<User> students, List<Course> courses) {
-        List<Course> publishedCourses = courses.stream()
-                .filter(c -> c.getStatus() == CourseStatus.PUBLISHED)
+    private List<Course> createWebCoursesForTeacher(User teacher, Module module) {
+        List<Course> courses = new ArrayList<>();
+        
+        // Course 1: HTML & CSS Fundamentals
+        Course htmlCourse = new Course();
+        htmlCourse.setTitle("HTML & CSS Fundamentals");
+        htmlCourse.setDescription("Learn the building blocks of the web: HTML for structure and CSS for styling.");
+        htmlCourse.setContent(getHTMLCSSContent());
+        htmlCourse.setStatus(CourseStatus.PUBLISHED);
+        htmlCourse.setIndexed(true);
+        htmlCourse.setCreatedAt(LocalDateTime.now());
+        htmlCourse.setPublishedAt(LocalDateTime.now());
+        htmlCourse.setCreatedBy(teacher);
+        htmlCourse.setModule(module);
+        htmlCourse.setDisplayOrder(1);
+        courses.add(htmlCourse);
+
+        // Course 2: JavaScript Essentials
+        Course jsCourse = new Course();
+        jsCourse.setTitle("JavaScript Essentials");
+        jsCourse.setDescription("Master JavaScript from basics to modern ES6+ features and DOM manipulation.");
+        jsCourse.setContent(getJavaScriptContent());
+        jsCourse.setStatus(CourseStatus.PUBLISHED);
+        jsCourse.setIndexed(true);
+        jsCourse.setCreatedAt(LocalDateTime.now());
+        jsCourse.setPublishedAt(LocalDateTime.now());
+        jsCourse.setCreatedBy(teacher);
+        jsCourse.setModule(module);
+        jsCourse.setDisplayOrder(2);
+        courses.add(jsCourse);
+
+        List<Course> savedCourses = courseRepository.saveAll(courses);
+        log.info("Created {} Web Development courses for teacher '{}'", savedCourses.size(), teacher.getFullName());
+        
+        // Index courses for RAG
+        for (Course course : savedCourses) {
+            ragService.indexCourse(course);
+            log.info("Indexed course for RAG: {}", course.getTitle());
+        }
+        
+        return savedCourses;
+    }
+
+    private void createEnrollments(List<User> students, List<Course> courses, List<User> teachers) {
+        // Group courses by teacher/module
+        List<Course> teacher1Courses = courses.stream()
+                .filter(c -> c.getCreatedBy().equals(teachers.get(0)))
+                .toList();
+        List<Course> teacher2Courses = courses.stream()
+                .filter(c -> c.getCreatedBy().equals(teachers.get(1)))
+                .toList();
+        List<Course> teacher3Courses = courses.stream()
+                .filter(c -> c.getCreatedBy().equals(teachers.get(2)))
                 .toList();
 
-        // Enroll first 5 students in AI courses
-        List<Course> aiCourses = publishedCourses.stream()
-                .filter(c -> c.getModule() != null && c.getModule().getName().contains("Artificial Intelligence"))
-                .toList();
-        
-        for (int i = 0; i < 5 && i < students.size(); i++) {
-            for (Course course : aiCourses) {
+        // Students 1-3: Enrolled in Teacher 1's AI courses
+        for (int i = 0; i < 3 && i < students.size(); i++) {
+            for (Course course : teacher1Courses) {
                 Enrollment enrollment = new Enrollment();
                 enrollment.setStudent(students.get(i));
                 enrollment.setCourse(course);
                 enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
-                enrollment.setProgressPercentage(i * 20);
+                enrollment.setProgressPercentage(i * 25);
                 enrollment.setEnrolledAt(LocalDateTime.now().minusDays(10 - i));
                 enrollmentRepository.save(enrollment);
             }
         }
+        log.info("Enrolled students 1-3 in Teacher 1's AI courses");
 
-        // Enroll students 6-10 in CP courses
-        List<Course> cpCourses = publishedCourses.stream()
-                .filter(c -> c.getModule() != null && c.getModule().getName().contains("Competitive"))
-                .toList();
-        
-        for (int i = 5; i < 10 && i < students.size(); i++) {
-            for (Course course : cpCourses) {
+        // Students 4-6: Enrolled in Teacher 2's Competitive Programming courses
+        for (int i = 3; i < 6 && i < students.size(); i++) {
+            for (Course course : teacher2Courses) {
                 Enrollment enrollment = new Enrollment();
                 enrollment.setStudent(students.get(i));
                 enrollment.setCourse(course);
                 enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
-                enrollment.setProgressPercentage((i - 5) * 20);
+                enrollment.setProgressPercentage((i - 3) * 25);
                 enrollment.setEnrolledAt(LocalDateTime.now().minusDays(15 - i));
                 enrollmentRepository.save(enrollment);
             }
         }
+        log.info("Enrolled students 4-6 in Teacher 2's Competitive Programming courses");
 
-        // Enroll first 3 students in some CP courses too (for variety)
-        for (int i = 0; i < 3 && i < students.size() && cpCourses.size() > 0; i++) {
+        // Students 7-9: Enrolled in Teacher 3's Web Development courses
+        for (int i = 6; i < 9 && i < students.size(); i++) {
+            for (Course course : teacher3Courses) {
+                Enrollment enrollment = new Enrollment();
+                enrollment.setStudent(students.get(i));
+                enrollment.setCourse(course);
+                enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
+                enrollment.setProgressPercentage((i - 6) * 25);
+                enrollment.setEnrolledAt(LocalDateTime.now().minusDays(12 - i));
+                enrollmentRepository.save(enrollment);
+            }
+        }
+        log.info("Enrolled students 7-9 in Teacher 3's Web Development courses");
+
+        // Student 10: Enrolled in courses from all teachers (cross-enrollment example)
+        if (students.size() >= 10) {
+            User student10 = students.get(9);
+            // Enroll in one course from each teacher
+            if (!teacher1Courses.isEmpty()) {
+                Enrollment enrollment = new Enrollment();
+                enrollment.setStudent(student10);
+                enrollment.setCourse(teacher1Courses.get(0));
+                enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
+                enrollment.setProgressPercentage(50);
+                enrollment.setEnrolledAt(LocalDateTime.now().minusDays(5));
+                enrollmentRepository.save(enrollment);
+            }
+            if (!teacher2Courses.isEmpty()) {
+                Enrollment enrollment = new Enrollment();
+                enrollment.setStudent(student10);
+                enrollment.setCourse(teacher2Courses.get(0));
+                enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
+                enrollment.setProgressPercentage(30);
+                enrollment.setEnrolledAt(LocalDateTime.now().minusDays(4));
+                enrollmentRepository.save(enrollment);
+            }
+            if (!teacher3Courses.isEmpty()) {
+                Enrollment enrollment = new Enrollment();
+                enrollment.setStudent(student10);
+                enrollment.setCourse(teacher3Courses.get(0));
+                enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
+                enrollment.setProgressPercentage(40);
+                enrollment.setEnrolledAt(LocalDateTime.now().minusDays(3));
+                enrollmentRepository.save(enrollment);
+            }
+            log.info("Enrolled student 10 in courses from all three teachers");
+        }
+
+        // Some students enrolled in multiple teachers' courses
+        // Student 1 also enrolled in Teacher 2's first course
+        if (students.size() >= 1 && !teacher2Courses.isEmpty()) {
             Enrollment enrollment = new Enrollment();
-            enrollment.setStudent(students.get(i));
-            enrollment.setCourse(cpCourses.get(i % cpCourses.size()));
+            enrollment.setStudent(students.get(0));
+            enrollment.setCourse(teacher2Courses.get(0));
             enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
-            enrollment.setProgressPercentage(50);
-            enrollment.setEnrolledAt(LocalDateTime.now().minusDays(5));
+            enrollment.setProgressPercentage(20);
+            enrollment.setEnrolledAt(LocalDateTime.now().minusDays(2));
             enrollmentRepository.save(enrollment);
         }
 
-        log.info("Created sample enrollments");
+        // Student 5 also enrolled in Teacher 3's first course
+        if (students.size() >= 5 && !teacher3Courses.isEmpty()) {
+            Enrollment enrollment = new Enrollment();
+            enrollment.setStudent(students.get(4));
+            enrollment.setCourse(teacher3Courses.get(0));
+            enrollment.setStatus(EnrollmentStatus.IN_PROGRESS);
+            enrollment.setProgressPercentage(15);
+            enrollment.setEnrolledAt(LocalDateTime.now().minusDays(1));
+            enrollmentRepository.save(enrollment);
+        }
+
+        log.info("Created sample enrollments - students can see courses from teachers they enrolled with");
     }
 
     // === AI COURSE CONTENTS ===
@@ -1270,6 +1371,332 @@ public class DataLoader implements CommandLineRunner {
             - Union-Find for connectivity queries
             - Watch for 0-indexed vs 1-indexed vertices
             - Consider edge cases: disconnected graphs, self-loops
+            """;
+    }
+
+    // === WEB DEVELOPMENT COURSE CONTENTS ===
+
+    private String getHTMLCSSContent() {
+        return """
+            # HTML & CSS Fundamentals
+            
+            ## Chapter 1: Introduction to HTML
+            
+            HTML (HyperText Markup Language) is the standard markup language for creating web pages. It describes the structure of a web page using elements and tags.
+            
+            ### What is HTML?
+            HTML defines the structure and content of web pages. Every website you visit is built with HTML at its core. HTML elements tell the browser how to display content.
+            
+            ### Basic HTML Structure:
+            - DOCTYPE declaration
+            - html element (root)
+            - head element (metadata)
+            - body element (visible content)
+            
+            ### HTML Elements:
+            - Opening tag: <tagname>
+            - Content: What appears on the page
+            - Closing tag: </tagname>
+            - Self-closing tags: <br>, <img>, <input>
+            
+            ## Chapter 2: Essential HTML Elements
+            
+            ### Text Elements:
+            - **Headings**: h1 through h6 for titles
+            - **Paragraphs**: p for text blocks
+            - **Spans**: span for inline text styling
+            - **Strong/Em**: For emphasis (bold/italic)
+            
+            ### Lists:
+            - **Unordered Lists**: ul with li items (bullets)
+            - **Ordered Lists**: ol with li items (numbered)
+            - **Description Lists**: dl with dt and dd
+            
+            ### Links and Navigation:
+            - **Anchor tags**: a with href attribute
+            - **Internal links**: Same page navigation
+            - **External links**: Other websites
+            - **Email links**: mailto: protocol
+            
+            ### Media Elements:
+            - **Images**: img with src and alt attributes
+            - **Video**: video with source elements
+            - **Audio**: audio for sound files
+            
+            ## Chapter 3: HTML Forms
+            
+            Forms collect user input and send data to servers.
+            
+            ### Form Elements:
+            - **Input types**: text, password, email, number, date
+            - **Textarea**: Multi-line text input
+            - **Select/Option**: Dropdown menus
+            - **Checkbox/Radio**: Multiple choice options
+            - **Button/Submit**: Form actions
+            
+            ### Form Attributes:
+            - action: Where to send data
+            - method: GET or POST
+            - name: Field identifier
+            - required: Validation
+            - placeholder: Hint text
+            
+            ## Chapter 4: Introduction to CSS
+            
+            CSS (Cascading Style Sheets) controls the visual presentation of HTML elements.
+            
+            ### CSS Syntax:
+            - Selector: What to style
+            - Property: What aspect to change
+            - Value: How to change it
+            
+            ### Ways to Add CSS:
+            - **Inline**: style attribute on elements
+            - **Internal**: style tag in head
+            - **External**: Separate .css file (recommended)
+            
+            ### CSS Selectors:
+            - **Element**: p, h1, div
+            - **Class**: .classname
+            - **ID**: #idname
+            - **Descendant**: parent child
+            - **Pseudo-classes**: :hover, :focus, :first-child
+            
+            ## Chapter 5: CSS Box Model
+            
+            Every HTML element is a box with these layers:
+            
+            ### Box Properties:
+            - **Content**: The actual content (text, images)
+            - **Padding**: Space inside the border
+            - **Border**: The element's edge
+            - **Margin**: Space outside the border
+            
+            ### Sizing:
+            - width and height
+            - max-width and min-width
+            - box-sizing: border-box (recommended)
+            
+            ### Display Properties:
+            - **block**: Full width, new line
+            - **inline**: Only content width, same line
+            - **inline-block**: Inline but accepts width/height
+            - **none**: Hidden completely
+            
+            ## Chapter 6: CSS Layout
+            
+            ### Flexbox:
+            Modern layout system for one-dimensional layouts.
+            - display: flex on container
+            - flex-direction: row or column
+            - justify-content: Main axis alignment
+            - align-items: Cross axis alignment
+            - gap: Space between items
+            
+            ### CSS Grid:
+            Two-dimensional layout system for complex layouts.
+            - display: grid on container
+            - grid-template-columns: Define columns
+            - grid-template-rows: Define rows
+            - gap: Space between cells
+            - grid-column/grid-row: Item placement
+            
+            ### Responsive Design:
+            - **Media Queries**: Different styles for different screens
+            - **Mobile-first**: Start with mobile, add complexity
+            - **Relative Units**: em, rem, %, vw, vh
+            - **Flexible Images**: max-width: 100%
+            
+            ## Chapter 7: CSS Best Practices
+            
+            ### Organization:
+            - Use consistent naming conventions (BEM, etc.)
+            - Group related styles together
+            - Comment complex sections
+            - Keep specificity low
+            
+            ### Performance:
+            - Minimize CSS file size
+            - Avoid excessive nesting
+            - Use shorthand properties
+            - Limit use of expensive properties
+            
+            ### Accessibility:
+            - Ensure sufficient color contrast
+            - Don't rely only on color for meaning
+            - Use relative font sizes
+            - Test with screen readers
+            """;
+    }
+
+    private String getJavaScriptContent() {
+        return """
+            # JavaScript Essentials
+            
+            ## Chapter 1: Introduction to JavaScript
+            
+            JavaScript is the programming language of the web. It adds interactivity, dynamic content, and behavior to websites.
+            
+            ### What is JavaScript?
+            JavaScript is a versatile, high-level programming language that runs in browsers and on servers (Node.js). It's essential for modern web development.
+            
+            ### Adding JavaScript to HTML:
+            - **Script tag**: Inline or external file
+            - **Placement**: End of body (recommended) or head with defer
+            - **External files**: Better for organization and caching
+            
+            ### JavaScript Basics:
+            - Case-sensitive language
+            - Semicolons optional but recommended
+            - Comments: // single line, /* multi-line */
+            
+            ## Chapter 2: Variables and Data Types
+            
+            ### Variable Declaration:
+            - **var**: Function-scoped (legacy)
+            - **let**: Block-scoped, reassignable
+            - **const**: Block-scoped, constant reference
+            
+            ### Primitive Data Types:
+            - **String**: Text in quotes ('hello' or "hello")
+            - **Number**: Integers and decimals
+            - **Boolean**: true or false
+            - **undefined**: Declared but no value
+            - **null**: Intentional absence of value
+            - **Symbol**: Unique identifier (ES6)
+            - **BigInt**: Large integers (ES2020)
+            
+            ### Reference Types:
+            - **Object**: Key-value pairs
+            - **Array**: Ordered list of values
+            - **Function**: Reusable code blocks
+            
+            ## Chapter 3: Operators and Control Flow
+            
+            ### Operators:
+            - **Arithmetic**: +, -, *, /, %, **
+            - **Assignment**: =, +=, -=, *=, /=
+            - **Comparison**: ==, ===, !=, !==, <, >, <=, >=
+            - **Logical**: &&, ||, !
+            - **Ternary**: condition ? ifTrue : ifFalse
+            
+            ### Control Structures:
+            - **if/else**: Conditional execution
+            - **switch**: Multiple conditions
+            - **for loop**: Known iterations
+            - **while loop**: Unknown iterations
+            - **for...of**: Iterate over arrays
+            - **for...in**: Iterate over object keys
+            
+            ## Chapter 4: Functions
+            
+            ### Function Declaration:
+            - Traditional function declaration
+            - Function expression
+            - Arrow functions (ES6)
+            
+            ### Function Concepts:
+            - **Parameters**: Input values
+            - **Return value**: Output value
+            - **Default parameters**: Fallback values
+            - **Rest parameters**: Variable arguments (...args)
+            - **Scope**: Variable accessibility
+            - **Closures**: Inner function accessing outer scope
+            
+            ### Arrow Functions:
+            - Shorter syntax
+            - Lexical this binding
+            - No arguments object
+            - Cannot be used as constructors
+            
+            ## Chapter 5: Arrays and Objects
+            
+            ### Array Methods:
+            - **push/pop**: Add/remove from end
+            - **shift/unshift**: Remove/add from beginning
+            - **slice**: Extract portion
+            - **splice**: Remove/insert elements
+            - **map**: Transform each element
+            - **filter**: Select elements
+            - **reduce**: Aggregate to single value
+            - **find/findIndex**: Search for element
+            - **forEach**: Iterate without return
+            
+            ### Object Operations:
+            - Creating objects
+            - Accessing properties (dot and bracket notation)
+            - Object destructuring
+            - Spread operator
+            - Object methods
+            - this keyword
+            
+            ## Chapter 6: DOM Manipulation
+            
+            The Document Object Model (DOM) is the browser's representation of HTML that JavaScript can modify.
+            
+            ### Selecting Elements:
+            - **getElementById**: Single element by ID
+            - **querySelector**: First matching element
+            - **querySelectorAll**: All matching elements
+            - **getElementsByClassName**: Elements by class
+            
+            ### Modifying Elements:
+            - **textContent**: Change text
+            - **innerHTML**: Change HTML content
+            - **style**: Modify CSS styles
+            - **classList**: Add/remove/toggle classes
+            - **setAttribute**: Change attributes
+            
+            ### Creating Elements:
+            - createElement: Make new element
+            - appendChild: Add to parent
+            - insertBefore: Insert at position
+            - removeChild: Remove element
+            
+            ## Chapter 7: Events
+            
+            Events are actions that happen in the browser that JavaScript can respond to.
+            
+            ### Event Handling:
+            - **addEventListener**: Modern approach
+            - **Event object**: Information about event
+            - **Event propagation**: Bubbling and capturing
+            - **preventDefault**: Stop default behavior
+            - **stopPropagation**: Stop event bubbling
+            
+            ### Common Events:
+            - **click**: Mouse click
+            - **submit**: Form submission
+            - **input**: Input value changes
+            - **keydown/keyup**: Keyboard actions
+            - **load**: Page/resource loaded
+            - **DOMContentLoaded**: HTML parsed
+            
+            ## Chapter 8: Modern JavaScript (ES6+)
+            
+            ### ES6 Features:
+            - **let/const**: Block scoping
+            - **Arrow functions**: Concise syntax
+            - **Template literals**: String interpolation
+            - **Destructuring**: Extract values
+            - **Spread/Rest**: Expand/collect
+            - **Modules**: import/export
+            - **Classes**: Object-oriented syntax
+            - **Promises**: Async operations
+            
+            ### Async JavaScript:
+            - **Callbacks**: Traditional async
+            - **Promises**: Then/catch chains
+            - **async/await**: Synchronous-looking async
+            - **Fetch API**: Network requests
+            
+            ### Best Practices:
+            - Use const by default, let when needed
+            - Prefer arrow functions for callbacks
+            - Use template literals for string concatenation
+            - Handle errors with try/catch
+            - Keep functions small and focused
+            - Use meaningful variable names
             """;
     }
 }

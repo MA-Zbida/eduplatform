@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle='Manage Modules', content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Modules</h1>
+            <a th:href="@{/teacher/modules/new}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Create Module
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Courses</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="module : ${modules}">
+                                <td>
+                                    <a th:href="@{/teacher/modules/{id}(id=${module.id})}"
+                                        class="text-decoration-none fw-medium">
+                                        <i class="bi bi-folder me-2"></i>
+                                        <span th:text="${module.name}">Module Name</span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span th:if="${module.description}"
+                                        class="text-muted small text-truncate d-inline-block" style="max-width: 250px;"
+                                        th:text="${module.description}">Description</span>
+                                    <span th:unless="${module.description}" class="text-muted small">No
+                                        description</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary" th:text="${module.courses.size()}">0</span>
+                                </td>
+                                <td th:text="${module.displayOrder}">0</td>
+                                <td>
+                                    <span th:if="${module.active}" class="badge bg-success">Active</span>
+                                    <span th:unless="${module.active}" class="badge bg-secondary">Inactive</span>
+                                </td>
+                                <td th:text="${#temporals.format(module.createdAt, 'MMM dd, yyyy')}">Jan 01, 2024</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/teacher/modules/{id}(id=${module.id})}"
+                                            class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a th:href="@{/teacher/modules/{id}/edit(id=${module.id})}"
+                                            class="btn btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" th:data-id="${module.id}"
+                                            th:data-name="${module.name}"
+                                            th:data-course-count="${module.courses.size()}" data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal" onclick="prepareDelete(this)" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(modules)}">
+                                <td colspan="7" class="text-center py-5">
+                                    <i class="bi bi-folder fs-1 d-block mb-2 text-muted"></i>
+                                    <p class="text-muted mb-0">No modules found</p>
+                                    <a th:href="@{/teacher/modules/new}" class="btn btn-primary mt-3">Create First
+                                        Module</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong id="deleteModuleName"></strong>?</p>
+                        <p id="deleteCourseWarning" class="text-danger small" style="display: none;">
+                            This module contains courses. Please remove or reassign courses before deleting.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteForm" method="post" class="d-inline">
+                            <button type="submit" id="deleteButton" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            function prepareDelete(button) {
+                const id = button.getAttribute('data-id');
+                const name = button.getAttribute('data-name');
+                const courseCount = parseInt(button.getAttribute('data-course-count'));
+
+                document.getElementById('deleteModuleName').textContent = name;
+                document.getElementById('deleteForm').action = '/teacher/modules/' + id + '/delete';
+
+                const warning = document.getElementById('deleteCourseWarning');
+                const deleteBtn = document.getElementById('deleteButton');
+
+                if (courseCount > 0) {
+                    warning.style.display = 'block';
+                    deleteBtn.disabled = true;
+                } else {
+                    warning.style.display = 'none';
+                    deleteBtn.disabled = false;
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

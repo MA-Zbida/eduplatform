@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle='Platform Activity', content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0"><i class="bi bi-activity me-2"></i>Platform Activity</h1>
+            <a th:href="@{/superadmin/dashboard}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Activity Summary -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Quiz Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total Quizzes Taken</span>
+                            <span class="badge bg-primary fs-5" th:text="${totalQuizzesTaken}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Quiz Results -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Quiz Results</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student</th>
+                                <th>Quiz</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="result : ${recentQuizResults}">
+                                <td th:text="${result.student.fullName}">Student Name</td>
+                                <td>
+                                    <span th:text="${result.quiz.course.title}">Course</span>
+                                    <small class="text-muted d-block"
+                                        th:text="${result.quiz.difficulty}">Difficulty</small>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${result.scorePercentage >= 70} ? 'bg-success' : (${result.scorePercentage >= 50} ? 'bg-warning' : 'bg-danger')"
+                                        th:text="${#numbers.formatDecimal(result.scorePercentage, 1, 0)} + '%'">0%</span>
+                                </td>
+                                <td th:text="${#temporals.format(result.completedAt, 'MMM dd, yyyy HH:mm')}">Date</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentQuizResults)}">
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No quiz activity yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

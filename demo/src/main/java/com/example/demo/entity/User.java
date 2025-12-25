@@ -20,7 +20,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * User entity representing both administrators and students.
+ * User entity representing administrators, teachers, and students.
  * Authentication and authorization handled via Spring Security.
  */
 @Entity
@@ -174,6 +174,10 @@ public class User {
 
     public boolean isAdmin() {
         return this.role == Role.ADMINISTRATOR;
+    }
+
+    public boolean isTeacher() {
+        return this.role == Role.TEACHER;
     }
 
     public boolean isStudent() {

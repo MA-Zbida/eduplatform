@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,42 +21,53 @@
             --danger-color: #ef4444;
             --warning-color: #f59e0b;
         }
+
         body {
             background-color: #f8fafc;
             min-height: 100vh;
         }
+
         .navbar {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
         }
+
         .sidebar {
             background: white;
             min-height: calc(100vh - 56px);
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
         }
+
         .sidebar .nav-link {
             color: #64748b;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             margin: 0.25rem 0;
         }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
             background-color: #f1f5f9;
             color: var(--primary-color);
         }
+
         .sidebar .nav-link i {
             width: 24px;
         }
+
         .card {
             border: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border-radius: 0.75rem;
         }
+
         .stat-card {
             transition: transform 0.2s;
         }
+
         .stat-card:hover {
             transform: translateY(-2px);
         }
+
         .stat-icon {
             width: 48px;
             height: 48px;
@@ -65,35 +76,63 @@
             align-items: center;
             justify-content: center;
         }
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
+
         .btn-primary:hover {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
         }
-        .badge-draft { background-color: #94a3b8; }
-        .badge-published { background-color: var(--success-color); }
-        .badge-archived { background-color: #64748b; }
-        .progress-bar-custom { background-color: var(--primary-color); }
+
+        .badge-draft {
+            background-color: #94a3b8;
+        }
+
+        .badge-published {
+            background-color: var(--success-color);
+        }
+
+        .badge-archived {
+            background-color: #64748b;
+        }
+
+        .progress-bar-custom {
+            background-color: var(--primary-color);
+        }
+
         /* Math/KaTeX Styling */
-        .katex { font-size: 1.1em; }
-        .katex-display { margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
-        .math-content { line-height: 1.8; }
-        .math-block { 
-            background: #f8f9fa; 
-            padding: 1rem; 
-            border-radius: 0.5rem; 
+        .katex {
+            font-size: 1.1em;
+        }
+
+        .katex-display {
+            margin: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .math-content {
+            line-height: 1.8;
+        }
+
+        .math-block {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
             margin: 0.5rem 0;
             overflow-x: auto;
         }
+
         .content-wrapper {
             padding: 1.5rem;
         }
     </style>
     <th:block th:replace="${extraStyles} ?: ~{}"></th:block>
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
@@ -108,15 +147,21 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
-                           data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-1"></i>
                             <span sec:authentication="name">User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><span class="dropdown-item-text text-muted small" sec:authorize="hasRole('ADMINISTRATOR')">Administrator</span></li>
-                            <li><span class="dropdown-item-text text-muted small" sec:authorize="hasRole('STUDENT')">Student</span></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li><span class="dropdown-item-text text-muted small"
+                                    sec:authorize="hasRole('ADMINISTRATOR')">Super Admin</span></li>
+                            <li><span class="dropdown-item-text text-muted small"
+                                    sec:authorize="hasRole('TEACHER')">Teacher</span></li>
+                            <li><span class="dropdown-item-text text-muted small"
+                                    sec:authorize="hasRole('STUDENT')">Student</span></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <form th:action="@{/logout}" method="post" class="d-inline">
                                     <button type="submit" class="dropdown-item text-danger">
@@ -137,31 +182,55 @@
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 px-0 sidebar" sec:authorize="isAuthenticated()">
                 <nav class="p-3">
-                    <!-- Admin Sidebar -->
+                    <!-- Super Admin Sidebar -->
                     <div sec:authorize="hasRole('ADMINISTRATOR')">
-                        <h6 class="text-uppercase text-muted small mb-3">Administration</h6>
+                        <h6 class="text-uppercase text-muted small mb-3">Platform Management</h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'admin-dashboard'} ? 'active'" 
-                                   th:href="@{/admin/dashboard}">
+                                <a class="nav-link" th:classappend="${currentPage == 'superadmin-dashboard'} ? 'active'"
+                                    th:href="@{/superadmin/dashboard}">
+                                    <i class="bi bi-shield-lock me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:classappend="${currentPage == 'superadmin-teachers'} ? 'active'"
+                                    th:href="@{/superadmin/teachers}">
+                                    <i class="bi bi-person-badge me-2"></i>Teachers
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:classappend="${currentPage == 'superadmin-activity'} ? 'active'"
+                                    th:href="@{/superadmin/activity}">
+                                    <i class="bi bi-activity me-2"></i>Activity
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Teacher Sidebar -->
+                    <div sec:authorize="hasRole('TEACHER')">
+                        <h6 class="text-uppercase text-muted small mb-3">Teaching</h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link" th:classappend="${currentPage == 'teacher-dashboard'} ? 'active'"
+                                    th:href="@{/teacher/dashboard}">
                                     <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'admin-courses'} ? 'active'" 
-                                   th:href="@{/admin/courses}">
+                                <a class="nav-link" th:classappend="${currentPage == 'teacher-courses'} ? 'active'"
+                                    th:href="@{/teacher/courses}">
                                     <i class="bi bi-book me-2"></i>Courses
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'admin-modules'} ? 'active'" 
-                                   th:href="@{/admin/modules}">
+                                <a class="nav-link" th:classappend="${currentPage == 'teacher-modules'} ? 'active'"
+                                    th:href="@{/teacher/modules}">
                                     <i class="bi bi-folder me-2"></i>Modules
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'admin-students'} ? 'active'" 
-                                   th:href="@{/admin/students}">
+                                <a class="nav-link" th:classappend="${currentPage == 'teacher-students'} ? 'active'"
+                                    th:href="@{/teacher/students}">
                                     <i class="bi bi-people me-2"></i>Students
                                 </a>
                             </li>
@@ -172,26 +241,26 @@
                         <h6 class="text-uppercase text-muted small mb-3">Learning</h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'student-dashboard'} ? 'active'" 
-                                   th:href="@{/student/dashboard}">
+                                <a class="nav-link" th:classappend="${currentPage == 'student-dashboard'} ? 'active'"
+                                    th:href="@{/student/dashboard}">
                                     <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'student-courses'} ? 'active'" 
-                                   th:href="@{/student/courses}">
+                                <a class="nav-link" th:classappend="${currentPage == 'student-courses'} ? 'active'"
+                                    th:href="@{/student/courses}">
                                     <i class="bi bi-book me-2"></i>My Courses
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'student-quizzes'} ? 'active'" 
-                                   th:href="@{/student/quizzes}">
+                                <a class="nav-link" th:classappend="${currentPage == 'student-quizzes'} ? 'active'"
+                                    th:href="@{/student/quizzes}">
                                     <i class="bi bi-question-circle me-2"></i>Quizzes
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" th:classappend="${currentPage == 'student-history'} ? 'active'" 
-                                   th:href="@{/student/history}">
+                                <a class="nav-link" th:classappend="${currentPage == 'student-history'} ? 'active'"
+                                    th:href="@{/student/history}">
                                     <i class="bi bi-clock-history me-2"></i>History
                                 </a>
                             </li>
@@ -224,14 +293,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- KaTeX Auto-render -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             if (typeof renderMathInElement !== 'undefined') {
                 renderMathInElement(document.body, {
                     delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '\\[', right: '\\]', display: true}
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
                     ],
                     throwOnError: false,
                     trust: true
@@ -241,4 +310,5 @@
     </script>
     <th:block th:replace="${extraScripts} ?: ~{}"></th:block>
 </body>
+
 </html>

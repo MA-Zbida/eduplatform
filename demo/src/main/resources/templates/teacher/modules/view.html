@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle='View Module', content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/teacher/modules}">Modules</a></li>
+                    <li class="breadcrumb-item active" th:text="${module.name}">Module Name</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-folder me-2"></i>
+                        <span th:text="${module.name}">Module Name</span>
+                    </h1>
+                    <p th:if="${module.description}" class="text-muted mb-0" th:text="${module.description}">Description
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a th:href="@{/teacher/modules/{id}/edit(id=${module.id})}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-2"></i>Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Courses in this Module -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-book me-2"></i>Courses in this Module</span>
+                        <span class="badge bg-primary" th:text="${module.courses.size()}">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Indexed</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="course : ${module.courses}">
+                                        <td th:text="${course.displayOrder}">0</td>
+                                        <td>
+                                            <a th:href="@{/teacher/courses/{id}(id=${course.id})}"
+                                                class="text-decoration-none fw-medium">
+                                                <span th:text="${course.title}">Course Title</span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span th:if="${course.status.name() == 'DRAFT'}"
+                                                class="badge badge-draft">Draft</span>
+                                            <span th:if="${course.status.name() == 'PUBLISHED'}"
+                                                class="badge badge-published">Published</span>
+                                            <span th:if="${course.status.name() == 'ARCHIVED'}"
+                                                class="badge badge-archived">Archived</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${course.indexed}" class="badge bg-info">
+                                                <i class="bi bi-check-circle me-1"></i>Yes
+                                            </span>
+                                            <span th:unless="${course.indexed}" class="text-muted small">No</span>
+                                        </td>
+                                        <td>
+                                            <a th:href="@{/teacher/courses/{id}(id=${course.id})}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(module.courses)}">
+                                        <td colspan="5" class="text-center py-4">
+                                            <p class="text-muted mb-2">No courses in this module yet</p>
+                                            <a th:href="@{/teacher/courses/new}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-plus-circle me-2"></i>Create Course
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Module Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle me-2"></i>Module Information
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Status</dt>
+                            <dd class="col-sm-7">
+                                <span th:if="${module.active}" class="badge bg-success">Active</span>
+                                <span th:unless="${module.active}" class="badge bg-secondary">Inactive</span>
+                            </dd>
+
+                            <dt class="col-sm-5">Display Order</dt>
+                            <dd class="col-sm-7" th:text="${module.displayOrder}">0</dd>
+
+                            <dt class="col-sm-5">Total Courses</dt>
+                            <dd class="col-sm-7" th:text="${module.courses.size()}">0</dd>
+
+                            <dt class="col-sm-5">Published</dt>
+                            <dd class="col-sm-7" th:text="${module.publishedCourseCount}">0</dd>
+
+                            <dt class="col-sm-5">Created</dt>
+                            <dd class="col-sm-7" th:text="${#temporals.format(module.createdAt, 'MMM dd, yyyy')}">Jan
+                                01, 2024</dd>
+
+                            <dt class="col-sm-5">Created By</dt>
+                            <dd class="col-sm-7" th:text="${module.createdBy.fullName}">Admin</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-lightning me-2"></i>Quick Actions
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a th:href="@{/teacher/courses/new}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle me-2"></i>Add Course to Module
+                            </a>
+                            <a th:href="@{/teacher/modules/{id}/edit(id=${module.id})}"
+                                class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil me-2"></i>Edit Module
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

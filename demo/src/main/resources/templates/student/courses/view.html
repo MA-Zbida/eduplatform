@@ -23,6 +23,10 @@
                             <i class="bi bi-folder me-1"></i>
                             <span th:text="${course.module.name}">Module Name</span>
                         </small>
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <span th:text="${course.createdBy.fullName}">Teacher Name</span>
+                        </small>
                     </div>
                     <div>
                         <span th:if="${enrollment.courseCompleted}" class="badge bg-success fs-6">

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle=${course.id != null ? 'Edit Course' : 'New Course'}, content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/teacher/courses}">Courses</a></li>
+                    <li class="breadcrumb-item active" th:text="${course.id != null ? 'Edit Course' : 'New Course'}">
+                        Form</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0" th:text="${course.id != null ? 'Edit Course' : 'Create New Course'}">Course Form</h1>
+        </div>
+
+        <form th:action="${course.id != null ? '/teacher/courses/' + course.id + '/edit' : '/teacher/courses/new'}"
+            method="post" th:object="${course}" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Course Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Course Title <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" th:field="*{title}"
+                                    th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'"
+                                    placeholder="e.g., Introduction to Spring Boot" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}"
+                                    th:errors="*{title}"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" th:field="*{description}" rows="3"
+                                    th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"
+                                    placeholder="A brief description of the course..."></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
+                                    th:errors="*{description}"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="moduleId" class="form-label">Module</label>
+                                    <select class="form-select" id="moduleId" th:field="*{moduleId}">
+                                        <option value="">-- No Module --</option>
+                                        <option th:each="module : ${modules}" th:value="${module.id}"
+                                            th:text="${module.name}" th:selected="${course.moduleId == module.id}">
+                                            Module Name</option>
+                                    </select>
+                                    <div class="form-text">Optionally assign this course to a module for organization.
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="displayOrder" class="form-label">Display Order</label>
+                                    <input type="number" class="form-control" id="displayOrder"
+                                        th:field="*{displayOrder}" min="0">
+                                    <div class="form-text">Lower = first</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Course Content</h5>
+                            <small class="text-muted">Upload a PDF or enter text content for RAG-based quiz
+                                generation</small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Content Type Selection -->
+                            <div class="mb-4">
+                                <label class="form-label">Content Type</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="contentTypeRadio" id="textContent"
+                                        th:checked="${course.contentType == null || course.contentType == 'TEXT'}"
+                                        onclick="showTextContent()">
+                                    <label class="btn btn-outline-primary" for="textContent">
+                                        <i class="bi bi-file-text me-2"></i>Text Content
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="contentTypeRadio" id="pdfContent"
+                                        th:checked="${course.contentType == 'PDF'}" onclick="showPdfContent()">
+                                    <label class="btn btn-outline-primary" for="pdfContent">
+                                        <i class="bi bi-file-pdf me-2"></i>PDF Upload
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Text Content Section -->
+                            <div id="textContentSection"
+                                th:style="${course.contentType == 'PDF' ? 'display:none' : ''}">
+                                <div class="mb-3">
+                                    <label for="content" class="form-label">Text Content</label>
+                                    <textarea class="form-control" id="content" th:field="*{content}" rows="15"
+                                        th:classappend="${#fields.hasErrors('content')} ? 'is-invalid'"
+                                        placeholder="Enter the course content here. This text will be chunked and indexed for AI quiz generation..."></textarea>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}"
+                                        th:errors="*{content}"></div>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Use paragraphs (blank lines) to separate topics. Each paragraph helps the AI
+                                        create focused questions.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PDF Upload Section -->
+                            <div id="pdfContentSection" th:style="${course.contentType != 'PDF' ? 'display:none' : ''}">
+                                <!-- Existing PDF Info -->
+                                <div th:if="${course.pdfFilename}" class="alert alert-info mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-file-pdf text-danger me-2"></i>
+                                            <strong>Current PDF:</strong> <span
+                                                th:text="${course.pdfOriginalName}">file.pdf</span>
+                                        </div>
+                                        <div>
+                                            <a th:href="@{/teacher/courses/{id}/pdf(id=${course.id})}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary me-2">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="markPdfForRemoval()">
+                                                <i class="bi bi-trash me-1"></i>Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Remove PDF Hidden Field -->
+                                <input type="hidden" id="removePdf" name="removePdf" value="false">
+
+                                <div class="mb-3">
+                                    <label for="pdfFile" class="form-label">
+                                        <span th:if="${course.pdfFilename}">Replace PDF File</span>
+                                        <span th:unless="${course.pdfFilename}">Upload PDF File</span>
+                                    </label>
+                                    <input type="file" class="form-control" id="pdfFile" name="pdfFile" accept=".pdf">
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Maximum file size: 50MB. Only PDF files are accepted.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    <span th:text="${course.id != null ? 'Update Course' : 'Create Course'}">Save</span>
+                                </button>
+                                <a th:href="@{/teacher/courses}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-2"></i>Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="bi bi-lightbulb me-2"></i>Content Tips</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Use clear, well-structured paragraphs</li>
+                                <li>Include key concepts and definitions</li>
+                                <li>Separate topics with blank lines</li>
+                                <li>The AI uses this content to generate quiz questions</li>
+                                <li>More detailed content = better quizzes</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card bg-info bg-opacity-10 mt-4" th:if="${course.id != null}">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="bi bi-cpu me-2"></i>AI Quiz Generation</h6>
+                            <p class="small mb-0">After publishing, index the course for RAG to enable AI-powered quiz
+                                generation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <script th:inline="javascript">
+            function showTextContent() {
+                document.getElementById('textContentSection').style.display = '';
+                document.getElementById('pdfContentSection').style.display = 'none';
+                document.getElementById('removePdf').value = 'false';
+            }
+
+            function showPdfContent() {
+                document.getElementById('textContentSection').style.display = 'none';
+                document.getElementById('pdfContentSection').style.display = '';
+            }
+
+            function markPdfForRemoval() {
+                if (confirm('Are you sure you want to remove the PDF file?')) {
+                    document.getElementById('removePdf').value = 'true';
+                    document.getElementById('textContent').checked = true;
+                    showTextContent();
+                    alert('PDF marked for removal. Fill in text content and save to complete.');
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

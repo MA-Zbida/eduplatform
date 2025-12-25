@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout :: html(pageTitle='Course Details', content=~{::content}, extraStyles=null, extraScripts=null)}">
+
+<body>
+    <div th:fragment="content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/teacher/courses}">Courses</a></li>
+                    <li class="breadcrumb-item active" th:text="${course.title}">Course</li>
+                </ol>
+            </nav>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Course Info -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0" th:text="${course.title}">Course Title</h4>
+                        <div>
+                            <span th:if="${course.status.name() == 'DRAFT'}" class="badge badge-draft fs-6">Draft</span>
+                            <span th:if="${course.status.name() == 'PUBLISHED'}"
+                                class="badge badge-published fs-6">Published</span>
+                            <span th:if="${course.indexed}" class="badge bg-info fs-6 ms-1">RAG Indexed</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p th:if="${course.description}" th:text="${course.description}" class="text-muted"></p>
+
+                        <hr>
+
+                        <h6>Content Preview</h6>
+
+                        <!-- PDF Content -->
+                        <div th:if="${course.hasPdf()}" class="pdf-preview-container">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">
+                                    <i class="bi bi-file-pdf text-danger me-1"></i>
+                                    <span th:text="${course.pdfOriginalName}">document.pdf</span>
+                                </span>
+                                <a th:href="@{/teacher/courses/{id}/pdf(id=${course.id})}" target="_blank"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Open in new tab
+                                </a>
+                            </div>
+                            <iframe th:src="@{/teacher/courses/{id}/pdf(id=${course.id})}"
+                                style="width: 100%; height: 400px; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                            </iframe>
+                        </div>
+
+                        <!-- Text Content -->
+                        <div th:if="${!course.hasPdf()}" class="bg-light p-3 rounded"
+                            style="max-height: 300px; overflow-y: auto;">
+                            <pre class="mb-0" style="white-space: pre-wrap;"
+                                th:text="${course.content}">Course content...</pre>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:href="@{/teacher/courses/{id}/edit(id=${course.id})}" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil me-2"></i>Edit Course
+                            </a>
+
+                            <form th:if="${course.status.name() == 'DRAFT'}"
+                                th:action="@{/teacher/courses/{id}/publish(id=${course.id})}" method="post"
+                                class="d-inline">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Publish Course
+                                </button>
+                            </form>
+
+                            <form th:if="${course.status.name() == 'PUBLISHED' && !course.indexed}"
+                                th:action="@{/teacher/courses/{id}/index(id=${course.id})}" method="post"
+                                class="d-inline">
+                                <button type="submit" class="btn btn-info text-white">
+                                    <i class="bi bi-cpu me-2"></i>Index for RAG
+                                </button>
+                            </form>
+
+                            <a th:if="${course.indexed}" th:href="@{/teacher/courses/{id}/rag(id=${course.id})}"
+                                class="btn btn-outline-info">
+                                <i class="bi bi-eye me-2"></i>View RAG Output
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enrolled Students -->
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Enrolled Students</h5>
+                        <span class="badge bg-primary" th:text="${enrollments.size()}">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Enrolled</th>
+                                        <th>Progress</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="enrollment : ${enrollments}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                    style="width: 32px; height: 32px;">
+                                                    <span
+                                                        th:text="${#strings.toUpperCase(#strings.substring(enrollment.student.fullName, 0, 1))}">A</span>
+                                                </div>
+                                                <span th:text="${enrollment.student.fullName}">Student Name</span>
+                                            </div>
+                                        </td>
+                                        <td th:text="${#temporals.format(enrollment.enrolledAt, 'MMM dd, yyyy')}">Date
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 8px; width: 100px;">
+                                                <div class="progress-bar progress-bar-custom" role="progressbar"
+                                                    th:style="'width: ' + ${enrollment.progressPercentage} + '%'"></div>
+                                            </div>
+                                            <small class="text-muted"
+                                                th:text="${enrollment.progressPercentage} + '%'">0%</small>
+                                        </td>
+                                        <td>
+                                            <span th:if="${enrollment.status.name() == 'IN_PROGRESS'}"
+                                                class="badge bg-warning">In Progress</span>
+                                            <span th:if="${enrollment.status.name() == 'COMPLETED'}"
+                                                class="badge bg-success">Completed</span>
+                                            <span th:if="${enrollment.status.name() == 'FAILED'}"
+                                                class="badge bg-danger">Failed</span>
+                                        </td>
+                                        <td>
+                                            <form
+                                                th:action="@{/teacher/courses/{courseId}/unenroll/{studentId}(courseId=${course.id}, studentId=${enrollment.student.id})}"
+                                                method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Are you sure you want to unenroll this student?')">
+                                                    <i class="bi bi-person-dash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(enrollments)}">
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No students enrolled yet
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Enroll Student -->
+                <div class="card mb-4" th:if="${course.status.name() == 'PUBLISHED'}">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Enroll Student</h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:if="${!#lists.isEmpty(availableStudents)}"
+                            th:action="@{/teacher/courses/{id}/enroll(id=${course.id})}" method="post">
+                            <div class="mb-3">
+                                <select name="studentId" class="form-select" required>
+                                    <option value="">Select a student...</option>
+                                    <option th:each="student : ${availableStudents}" th:value="${student.id}"
+                                        th:text="${student.fullName + ' (' + student.email + ')'}">Student</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-person-check me-2"></i>Enroll Student
+                            </button>
+                        </form>
+                        <p th:if="${#lists.isEmpty(availableStudents)}" class="text-muted mb-0 text-center">
+                            All students are already enrolled
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card mb-4" th:if="${course.status.name() == 'DRAFT'}">
+                    <div class="card-body text-center">
+                        <i class="bi bi-info-circle text-warning fs-1"></i>
+                        <p class="mt-2 mb-0">Publish the course to enable student enrollment</p>
+                    </div>
+                </div>
+
+                <!-- Course Stats -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Enrolled Students</span>
+                            <strong th:text="${enrollments.size()}">0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total Quizzes</span>
+                            <strong th:text="${course.quizzes.size()}">0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Created</span>
+                            <strong th:text="${#temporals.format(course.createdAt, 'MMM dd, yyyy')}">Date</strong>
+                        </div>
+                        <div th:if="${course.publishedAt}" class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Published</span>
+                            <strong th:text="${#temporals.format(course.publishedAt, 'MMM dd, yyyy')}">Date</strong>
+                        </div>
+                        <div th:if="${course.indexedAt}" class="d-flex justify-content-between">
+                            <span class="text-muted">Indexed</span>
+                            <strong th:text="${#temporals.format(course.indexedAt, 'MMM dd, yyyy')}">Date</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Info -->
+                <div class="card bg-info bg-opacity-10" th:if="${course.indexed}">
+                    <div class="card-body">
+                        <h6><i class="bi bi-cpu me-2"></i>AI Quiz Ready</h6>
+                        <p class="small mb-2">This course is indexed for RAG. Students can generate AI-powered quizzes
+                            based on the course content.</p>
+                        <a th:href="@{/teacher/courses/{id}/rag(id=${course.id})}"
+                            class="btn btn-sm btn-info text-white">
+                            <i class="bi bi-eye me-2"></i>View RAG Output
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

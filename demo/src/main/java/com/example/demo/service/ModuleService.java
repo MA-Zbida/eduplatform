@@ -30,8 +30,8 @@ public class ModuleService {
 
     public Module createModule(ModuleDTO dto) {
         User currentUser = securityUtils.getCurrentUser();
-        if (currentUser == null || !currentUser.isAdmin()) {
-            throw new SecurityException("Only administrators can create modules");
+        if (currentUser == null || (!currentUser.isAdmin() && !currentUser.isTeacher())) {
+            throw new SecurityException("Only administrators or teachers can create modules");
         }
 
         if (moduleRepository.existsByName(dto.getName())) {
@@ -90,6 +90,16 @@ public class ModuleService {
     @Transactional(readOnly = true)
     public List<Module> findAllModules() {
         return moduleRepository.findAllByOrderByDisplayOrderAscNameAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Module> findByTeacher(Long teacherId) {
+        return moduleRepository.findByCreatedByIdOrderByDisplayOrderAscNameAsc(teacherId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Module> findActiveByTeacher(Long teacherId) {
+        return moduleRepository.findByCreatedByIdAndActiveOrderByDisplayOrderAscNameAsc(teacherId, true);
     }
 
     @Transactional(readOnly = true)
