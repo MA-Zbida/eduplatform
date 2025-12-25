@@ -396,7 +396,7 @@ public class LLMService {
         } catch (Exception e) {
             logger.warn("Could not parse evaluation: {}", e.getMessage());
         }
-        return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions);
+        return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions, currentDifficulty);
     }
 
     private LLMModels.QuizResponse generateMockQuiz(String context, int numberOfQuestions, 
