@@ -52,7 +52,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="badge bg-primary">Question [[${iterStat.count}]] of [[${questions.size()}]]</span>
                         </div>
-                        <h5 class="mb-4" th:text="${question.questionText}">Question text?</h5>
+                        <h5 class="mb-4 math-content" th:text="${question.questionText}">Question text?</h5>
                         
                         <div class="options">
                             <div th:each="option, optStat : ${question.options}" class="form-check p-0">
@@ -62,7 +62,7 @@
                                        th:value="${optStat.index}"
                                        class="form-check-input visually-hidden" 
                                        required>
-                                <label class="option-label" 
+                                <label class="option-label math-content" 
                                        th:for="'q' + ${question.id} + '_opt' + ${optStat.index}">
                                     <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
                                     <span th:text="${option.optionText}">Option text</span>

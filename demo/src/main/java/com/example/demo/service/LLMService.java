@@ -28,7 +28,6 @@ public class LLMService {
     @Value("${app.gemini.api-key:}")
     private String geminiApiKey;
 
-    // gemini-2.5-flash-lite has the best rate limits (10 RPM)
     private static final String GEMINI_MODEL = "gemini-2.5-flash-lite";
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_DELAY_MS = 5000; // 5 seconds
@@ -82,10 +81,15 @@ public class LLMService {
                 logger.info("Received Gemini response ({} chars)", responseText.length());
                 
                 LLMModels.QuizResponse quizResponse = parseQuizResponse(responseText, numberOfQuestions, difficulty, context);
-                quizResponse.setGeneratedByGemini(true);
-                quizResponse.setModelUsed(GEMINI_MODEL);
-                logger.info("Successfully generated quiz with {} questions", 
-                           quizResponse.getQuestions() != null ? quizResponse.getQuestions().size() : 0);
+                
+                // Only set model if successfully parsed from Gemini (flag is set in parseQuizResponse)
+                if (quizResponse.isGeneratedByGemini()) {
+                    quizResponse.setModelUsed(GEMINI_MODEL);
+                    logger.info("Successfully generated quiz with {} questions from Gemini", 
+                               quizResponse.getQuestions() != null ? quizResponse.getQuestions().size() : 0);
+                } else {
+                    logger.warn("Gemini returned response but parsing failed, using mock quiz");
+                }
                 return quizResponse;
                 
             } catch (Exception e) {
@@ -127,19 +131,20 @@ public class LLMService {
                                                             double scorePercentage,
                                                             int correctAnswers,
                                                             int totalQuestions,
-                                                            List<String> incorrectTopics) {
+                                                            List<String> incorrectTopics,
+                                                            DifficultyLevel currentDifficulty) {
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
-            return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions);
+            return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions, currentDifficulty);
         }
 
         try {
-            String prompt = buildEvaluationPrompt(scorePercentage, correctAnswers, totalQuestions, incorrectTopics);
+            String prompt = buildEvaluationPrompt(scorePercentage, correctAnswers, totalQuestions, incorrectTopics, currentDifficulty);
             Client client = getGeminiClient();
             GenerateContentResponse response = client.models.generateContent(GEMINI_MODEL, prompt, null);
-            return parseEvaluationResponse(response.text(), scorePercentage, correctAnswers, totalQuestions);
+            return parseEvaluationResponse(response.text(), scorePercentage, correctAnswers, totalQuestions, currentDifficulty);
         } catch (Exception e) {
             logger.error("Error calling Gemini for evaluation: {}", e.getMessage());
-            return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions);
+            return generateMockEvaluation(scorePercentage, correctAnswers, totalQuestions, currentDifficulty);
         }
     }
 
@@ -147,17 +152,34 @@ public class LLMService {
                                                       DifficultyLevel difficulty, String context) {
         try {
             String jsonContent = extractJson(responseText);
+            logger.debug("Extracted JSON: {}", jsonContent != null ? jsonContent.substring(0, Math.min(200, jsonContent.length())) : "null");
+            
             if (jsonContent != null) {
                 JsonNode root = objectMapper.readTree(jsonContent);
                 LLMModels.QuizResponse response = parseJsonToQuizResponse(root);
                 if (response.getQuestions() != null && !response.getQuestions().isEmpty()) {
+                    // Mark as successfully parsed from Gemini
+                    response.setGeneratedByGemini(true);
+                    logger.info("Successfully parsed {} questions from Gemini response", response.getQuestions().size());
                     return response;
+                } else {
+                    logger.warn("Parsed response has no questions, falling back to mock");
                 }
+            } else {
+                logger.warn("Could not extract JSON from response: {}", 
+                           responseText.substring(0, Math.min(500, responseText.length())));
             }
         } catch (Exception e) {
-            logger.warn("Could not parse JSON response: {}", e.getMessage());
+            logger.warn("Could not parse JSON response: {} - Response snippet: {}", 
+                       e.getMessage(), 
+                       responseText.substring(0, Math.min(500, responseText.length())));
         }
-        return generateMockQuiz(context, numberOfQuestions, difficulty, "Course");
+        
+        // Return mock quiz (not generated by Gemini)
+        LLMModels.QuizResponse mockResponse = generateMockQuiz(context, numberOfQuestions, difficulty, "Course");
+        mockResponse.setGeneratedByGemini(false);
+        mockResponse.setModelUsed("mock (parse-failed)");
+        return mockResponse;
     }
 
     private String extractJson(String text) {
@@ -165,9 +187,53 @@ public class LLMService {
         int start = cleaned.indexOf("{");
         int end = cleaned.lastIndexOf("}");
         if (start >= 0 && end > start) {
-            return cleaned.substring(start, end + 1);
+            String json = cleaned.substring(start, end + 1);
+            // Fix invalid JSON escape sequences from LaTeX math notation
+            json = fixLatexEscapes(json);
+            return json;
         }
         return null;
+    }
+    
+    /**
+     * Fix LaTeX escape sequences that are invalid in JSON.
+     * LaTeX uses backslash-pi, backslash-alpha, etc. which need to be double-escaped for JSON.
+     */
+    private String fixLatexEscapes(String json) {
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        while (i < json.length()) {
+            char c = json.charAt(i);
+            if (c == '\\' && i + 1 < json.length()) {
+                char next = json.charAt(i + 1);
+                if (isValidJsonEscape(next)) {
+                    // Valid escape sequence, keep both the backslash and the escape character
+                    result.append(c);
+                    result.append(next);
+                    i += 2; // Skip both characters
+                } else {
+                    // Invalid escape (likely LaTeX like \m, \a, \pi, etc.)
+                    // Double-escape the backslash and keep the next character
+                    result.append("\\\\");
+                    result.append(next);
+                    i += 2; // Skip both characters
+                }
+            } else {
+                result.append(c);
+                i++;
+            }
+        }
+        return result.toString();
+    }
+    
+    /**
+     * Check if a character following a backslash is a valid JSON escape character.
+     */
+    private boolean isValidJsonEscape(char c) {
+        // Valid JSON escapes: quote, backslash, slash, b, f, n, r, t, and u for unicode
+        return c == '"' || c == '\\' || c == '/' || 
+               c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't' ||
+               c == 'u';
     }
 
     private LLMModels.QuizResponse parseJsonToQuizResponse(JsonNode root) {
@@ -204,8 +270,9 @@ public class LLMService {
     private String buildQuizPrompt(String context, int numberOfQuestions, 
                                    DifficultyLevel difficulty, String courseTitle) {
         return String.format("""
-            You are an expert educational quiz creator. Generate a multiple-choice quiz 
-            based EXCLUSIVELY on the following course content.
+            You are an expert educational quiz creator specializing in creating engaging, 
+            dynamic questions. Generate a multiple-choice quiz based EXCLUSIVELY on the 
+            following course content.
             
             COURSE TITLE: %s
             DIFFICULTY LEVEL: %s
@@ -218,20 +285,46 @@ public class LLMService {
             1. Each question must have exactly 4 answer options
             2. Exactly ONE option must be correct
             3. Questions must be derived ONLY from the provided content
+            4. Be dynamic and creative with question styles (conceptual, practical, analytical)
             
-            Respond ONLY with valid JSON:
+            MATHEMATICAL CONTENT GUIDELINES:
+            - When the content includes formulas, equations, or mathematical expressions, 
+              include them in your questions and options
+            - Use LaTeX notation for ALL mathematical expressions:
+              * Inline math: wrap with single dollar signs, e.g., $E = mc^2$
+              * Display math: wrap with double dollar signs, e.g., $$\\frac{a}{b}$$
+            - Common LaTeX examples:
+              * Fractions: $\\frac{numerator}{denominator}$
+              * Exponents: $x^2$, $e^{-x}$
+              * Subscripts: $x_1$, $a_{n+1}$
+              * Square roots: $\\sqrt{x}$, $\\sqrt[n]{x}$
+              * Greek letters: $\\alpha$, $\\beta$, $\\gamma$, $\\pi$, $\\theta$
+              * Summation: $\\sum_{i=1}^{n} x_i$
+              * Integrals: $\\int_{a}^{b} f(x) dx$
+              * Limits: $\\lim_{x \\to \\infty} f(x)$
+              * Vectors: $\\vec{v}$, $\\mathbf{F}$
+              * Matrices: $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$
+            - For non-mathematical content, create clear conceptual questions
+            
+            QUESTION VARIETY:
+            - Include formula-based questions if the content has mathematical concepts
+            - Ask about the meaning and application of formulas, not just memorization
+            - Include "which formula applies" type questions when appropriate
+            - Ask students to identify correct transformations or simplifications
+            
+            Respond ONLY with valid JSON (escape special characters properly):
             {
               "questions": [
                 {
-                  "question_text": "Question text",
+                  "question_text": "Question text with $inline math$ or $$display math$$",
                   "options": [
-                    {"text": "Option A", "explanation": "Why correct/incorrect"},
+                    {"text": "Option A with $formula$ if needed", "explanation": "Why correct/incorrect"},
                     {"text": "Option B", "explanation": "Why correct/incorrect"},
                     {"text": "Option C", "explanation": "Why correct/incorrect"},
                     {"text": "Option D", "explanation": "Why correct/incorrect"}
                   ],
                   "correct_option_index": 0,
-                  "explanation": "Overall explanation",
+                  "explanation": "Overall explanation with $formulas$ if relevant",
                   "source_context": "Source from content"
                 }
               ]
@@ -240,21 +333,37 @@ public class LLMService {
     }
 
     private String buildEvaluationPrompt(double scorePercentage, int correctAnswers, 
-                                         int totalQuestions, List<String> incorrectTopics) {
+                                         int totalQuestions, List<String> incorrectTopics,
+                                         DifficultyLevel currentDifficulty) {
         return String.format("""
-            Evaluate quiz results: Score: %.1f%%, Correct: %d/%d, Weak topics: %s
+            Evaluate quiz results and recommend the NEXT appropriate difficulty level.
+            
+            CURRENT QUIZ INFO:
+            - Current Difficulty: %s
+            - Score: %.1f%%
+            - Correct: %d/%d
+            - Weak topics: %s
+            
+            DIFFICULTY PROGRESSION RULES:
+            - If score >= 90%% at current level, recommend NEXT HIGHER level
+            - If score >= 70%% at current level, recommend SAME level or SLIGHTLY higher
+            - If score < 70%%, recommend SAME level or LOWER level
+            - Available levels in order: EASY -> MEDIUM -> HARD -> EXPERT
+            - If already at EXPERT with score >= 90%%, recommend EXPERT
+            - If already at EASY with score < 50%%, recommend EASY
             
             Return JSON: {"feedback": "message", "strengths": [], "weaknesses": [], 
             "recommendations": [], "recommended_difficulty": "EASY|MEDIUM|HARD|EXPERT", 
             "course_validated": true/false}
-            """, scorePercentage, correctAnswers, totalQuestions, 
+            """, currentDifficulty.name(), scorePercentage, correctAnswers, totalQuestions, 
             incorrectTopics != null ? String.join(", ", incorrectTopics) : "none");
     }
 
     private LLMModels.EvaluationResponse parseEvaluationResponse(String responseText, 
                                                                    double scorePercentage,
                                                                    int correctAnswers,
-                                                                   int totalQuestions) {
+                                                                   int totalQuestions,
+                                                                   DifficultyLevel currentDifficulty) {
         try {
             String jsonContent = extractJson(responseText);
             if (jsonContent != null) {
@@ -338,26 +447,69 @@ public class LLMService {
 
     private LLMModels.EvaluationResponse generateMockEvaluation(double scorePercentage, 
                                                                  int correctAnswers, 
-                                                                 int totalQuestions) {
+                                                                 int totalQuestions,
+                                                                 DifficultyLevel currentDifficulty) {
         LLMModels.EvaluationResponse response = new LLMModels.EvaluationResponse();
+        
+        // Intelligent difficulty recommendation based on current level and score
+        DifficultyLevel nextDifficulty = calculateNextDifficulty(currentDifficulty, scorePercentage);
 
-        if (scorePercentage >= 70) {
+        if (scorePercentage >= 90) {
+            response.setFeedback("Excellent performance! You've mastered this level.");
+            response.setStrengths(List.of("Excellent understanding", "Strong grasp of concepts"));
+            response.setWeaknesses(List.of());
+            response.setCourseValidated(true);
+            response.setRecommendations(List.of("Ready for the next challenge!"));
+        } else if (scorePercentage >= 70) {
             response.setFeedback("Good job! You passed the quiz.");
             response.setStrengths(List.of("Good understanding"));
-            response.setWeaknesses(List.of());
-            response.setRecommendedDifficulty(DifficultyLevel.HARD);
+            response.setWeaknesses(List.of("Minor areas to review"));
             response.setCourseValidated(true);
-            response.setRecommendations(List.of("Try a harder quiz"));
-        } else {
-            response.setFeedback("Keep studying! Review the material.");
-            response.setStrengths(List.of("Effort shown"));
-            response.setWeaknesses(List.of("Needs more review"));
-            response.setRecommendedDifficulty(DifficultyLevel.EASY);
+            response.setRecommendations(List.of("Review incorrect answers before moving on"));
+        } else if (scorePercentage >= 50) {
+            response.setFeedback("You're making progress. Keep practicing!");
+            response.setStrengths(List.of("Effort shown", "Partial understanding"));
+            response.setWeaknesses(List.of("Some concepts need more review"));
             response.setCourseValidated(false);
-            response.setRecommendations(List.of("Re-read course content"));
+            response.setRecommendations(List.of("Focus on the topics you missed"));
+        } else {
+            response.setFeedback("Keep studying! Review the material carefully.");
+            response.setStrengths(List.of("Taking initiative to learn"));
+            response.setWeaknesses(List.of("Core concepts need reinforcement"));
+            response.setCourseValidated(false);
+            response.setRecommendations(List.of("Re-read course content", "Try easier questions first"));
         }
-
+        
+        response.setRecommendedDifficulty(nextDifficulty);
         return response;
+    }
+    
+    /**
+     * Calculate the next recommended difficulty based on current level and performance.
+     * 
+     * Logic:
+     * - Score >= 90%: Move UP one level (or stay at EXPERT)
+     * - Score >= 70%: Stay at current level or move up slightly
+     * - Score >= 50%: Stay at current level
+     * - Score < 50%: Move DOWN one level (or stay at EASY)
+     */
+    private DifficultyLevel calculateNextDifficulty(DifficultyLevel current, double scorePercentage) {
+        DifficultyLevel[] levels = DifficultyLevel.values();
+        int currentIndex = current.ordinal();
+        
+        if (scorePercentage >= 90) {
+            // Excellent: Move up one level
+            return levels[Math.min(currentIndex + 1, levels.length - 1)];
+        } else if (scorePercentage >= 70) {
+            // Good: Stay at current level (consolidate knowledge)
+            return current;
+        } else if (scorePercentage >= 50) {
+            // Moderate: Stay at current level
+            return current;
+        } else {
+            // Poor: Move down one level
+            return levels[Math.max(currentIndex - 1, 0)];
+        }
     }
 
     public boolean isLLMAvailable() {

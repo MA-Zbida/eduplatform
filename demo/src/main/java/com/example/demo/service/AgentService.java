@@ -183,7 +183,7 @@ public class AgentService {
         // Step 2: Get LLM evaluation
         String courseContext = ragService.getQuizContext(quiz.getCourse().getId());
         LLMModels.EvaluationResponse evaluation = llmService.evaluateQuizResults(
-                courseContext, scorePercentage, correctAnswers, totalQuestions, incorrectTopics);
+                courseContext, scorePercentage, correctAnswers, totalQuestions, incorrectTopics, quiz.getDifficulty());
 
         // Step 3: Create quiz result
         QuizResult result = new QuizResult(quiz, quiz.getStudent(), totalQuestions, submission.getTimeTakenSeconds());

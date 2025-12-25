@@ -108,7 +108,7 @@
                         </th:block>
                     </div>
                     
-                    <h6 th:text="${question.questionText}">Question?</h6>
+                    <h6 class="math-content" th:text="${question.questionText}">Question?</h6>
                     
                     <div class="mt-3">
                         <div th:each="option, optStat : ${question.options}" class="mb-2">
@@ -116,7 +116,7 @@
                                 <div th:class="${optStat.index == question.correctOptionIndex ? 'p-2 bg-success bg-opacity-10 rounded border border-success' : 
                                                (!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex ? 'p-2 bg-danger bg-opacity-10 rounded border border-danger' : 'p-2')}">
                                     <span class="fw-bold me-2" th:text="${#strings.concat('ABCD'.charAt(optStat.index), '.')}">A.</span>
-                                    <span th:text="${option.optionText}">Option</span>
+                                    <span class="math-content" th:text="${option.optionText}">Option</span>
                                     <span th:if="${optStat.index == question.correctOptionIndex}" class="badge bg-success ms-2">Correct Answer</span>
                                     <span th:if="${!#lists.isEmpty(studentAnswer) && studentAnswer[0].selectedOptionIndex == optStat.index && optStat.index != question.correctOptionIndex}" 
                                           class="badge bg-danger ms-2">Your Answer</span>
@@ -127,7 +127,7 @@
                     
                     <div class="alert alert-info mt-3 mb-0" th:if="${question.explanation}">
                         <strong><i class="bi bi-lightbulb me-2"></i>Explanation:</strong>
-                        <span th:text="${question.explanation}">Explanation text...</span>
+                        <span class="math-content" th:text="${question.explanation}">Explanation text...</span>
                     </div>
                 </div>
             </div>
