@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlatform - Présentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+
+        .slide {
+            width: 960px;
+            height: 540px;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 60px;
+            text-align: center;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #38bdf8;
+            line-height: 1.2;
+        }
+
+        .slide h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #38bdf8;
+        }
+
+        .slide p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+            max-width: 800px;
+        }
+
+        .slide ul {
+            text-align: left;
+            font-size: 1.125rem;
+            color: #cbd5e1;
+            margin: 20px auto;
+            max-width: 700px;
+        }
+
+        .slide ul li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .slide ul li strong {
+            color: #38bdf8;
+        }
+
+        .subtitle {
+            font-size: 1.75rem;
+            color: #94a3b8;
+            margin-top: 20px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tech-box {
+            background-color: #1e293b;
+            padding: 20px;
+            border-left: 4px solid #38bdf8;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .tech-box h3 {
+            color: #38bdf8;
+            font-size: 1.125rem;
+            margin-bottom: 10px;
+        }
+
+        .tech-box p {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            margin: 0;
+        }
+
+        .highlight {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        .arrow {
+            color: #38bdf8;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: flex-start;
+            margin-top: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .column {
+            text-align: center;
+        }
+
+        .column h3 {
+            color: #38bdf8;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .column ul {
+            margin: 0;
+            list-style: none;
+            padding: 0;
+        }
+
+        .column ul li {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .feature {
+            background-color: #1e293b;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid #38bdf8;
+        }
+
+        .formula {
+            background-color: #1e293b;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 4px;
+            font-size: 1.375rem;
+            color: #38bdf8;
+            font-weight: 600;
+            max-width: 600px;
+            border-left: 4px solid #38bdf8;
+        }
+
+        .centered-text {
+            text-align: center;
+        }
+
+        .bottom-info {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: Title Slide -->
+<section class="slide">
+    <h1>Intelligent Educational Platform</h1>
+    <p class="subtitle">Adaptive AI-Powered Learning System</p>
+    <p style="margin-top: 60px; font-size: 1rem; color: #94a3b8;">
+        Projet Universitaire Java/Spring Boot
+    </p>
+    <p style="font-size: 0.95rem; color: #64748b; margin-top: 10px;">
+        Noms des étudiants | Décembre 2025
+    </p>
+</section>
+
+<!-- SLIDE 2: Problématique -->
+<section class="slide">
+    <h2>Le Problème</h2>
+    <div style="margin-top: 40px; text-align: left; max-width: 750px; margin-left: auto; margin-right: auto;">
+        <p style="margin-bottom: 25px;">
+            <span class="highlight">❌ Aujourd'hui</span>, les plateformes éducatives offrent une expérience identique à tous les étudiants
+        </p>
+        <p style="margin-bottom: 25px;">
+            <span class="highlight">❌</span> Quiz manuels sans personnalisation
+        </p>
+        <p style="margin-bottom: 25px;">
+            <span class="highlight">❌</span> Même contenu et difficulté pour tous
+        </p>
+        <p style="margin-bottom: 25px;">
+            <span class="highlight">❌</span> Feedback générique et non contextuel
+        </p>
+        <p style="margin-bottom: 25px;">
+            <span class="highlight">❓</span> Comment adapter l'apprentissage à chaque étudiant ?
+        </p>
+    </div>
+</section>
+
+<!-- SLIDE 3: Notre Solution -->
+<section class="slide">
+    <h2>Notre Solution</h2>
+    <p style="margin-bottom: 30px;">EduPlatform : Plateforme éducative alimentée par l'IA</p>
+    
+    <div class="tech-grid">
+        <div class="tech-box">
+            <h3>🤖 LLM</h3>
+            <p>Génération intelligente de questions d'examen</p>
+        </div>
+        <div class="tech-box">
+            <h3>📚 RAG</h3>
+            <p>Récupération contexte réel du cours</p>
+        </div>
+        <div class="tech-box">
+            <h3>⚙️ Agent IA</h3>
+            <p>Orchestration et adaptation en temps réel</p>
+        </div>
+    </div>
+    
+    <p style="margin-top: 40px; font-size: 1.375rem; color: #38bdf8; font-weight: 600;">
+        ✅ Nous ne générons pas juste des quiz<br>Nous les PERSONNALISONS
+    </p>
+</section>
+
+<!-- SLIDE 4: Objectifs -->
+<section class="slide">
+    <h2>Nos Objectifs</h2>
+    <div style="margin-top: 40px;">
+        <div class="feature">
+            <strong>✅ Plateforme complète et sécurisée</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Authentification, multi-rôles, gestion étudiants/cours</p>
+        </div>
+        <div class="feature">
+            <strong>✅ Quiz adaptatifs avec IA</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Difficulté qui s'ajuste selon performance</p>
+        </div>
+        <div class="feature">
+            <strong>✅ Support contenu complexe</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Mathématiques, formules, notation scientifique</p>
+        </div>
+        <div class="feature">
+            <strong>✅ Feedback personnalisé</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Généré par IA, contextuel et utile</p>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 5: Architecture -->
+<section class="slide">
+    <h2>Architecture Technique</h2>
+    <div style="margin-top: 30px; font-size: 1.125rem; line-height: 2; color: #cbd5e1; max-width: 700px; margin-left: auto; margin-right: auto;">
+        <p><strong style="color: #38bdf8;">Présentation</strong> <span class="arrow">→</span> Thymeleaf + Bootstrap 5</p>
+        <p><strong style="color: #38bdf8;">Contrôleurs</strong> <span class="arrow">→</span> Auth / Admin / Student</p>
+        <p><strong style="color: #38bdf8;">Services</strong> <span class="arrow">→</span> 10+ services métier</p>
+        <p><strong style="color: #38bdf8;">Couche IA</strong> <span class="arrow">→</span> LLM + RAG + Agent</p>
+        <p><strong style="color: #38bdf8;">Repositories</strong> <span class="arrow">→</span> JPA/Spring Data</p>
+        <p><strong style="color: #38bdf8;">Base de Données</strong> <span class="arrow">→</span> H2 (dev) / PostgreSQL (prod)</p>
+    </div>
+</section>
+
+<!-- SLIDE 6: Technologies -->
+<section class="slide">
+    <h2>Stack Technologique</h2>
+    <div class="tech-grid" style="margin-top: 40px;">
+        <div class="tech-box">
+            <h3>Backend</h3>
+            <p>Java 21<br>Spring Boot 3.2.1<br>Spring Security 6</p>
+        </div>
+        <div class="tech-box">
+            <h3>IA</h3>
+            <p>Spring AI 0.8.1<br>LLM (OpenAI/Mock)<br>RAG Integration</p>
+        </div>
+        <div class="tech-box">
+            <h3>Frontend</h3>
+            <p>Thymeleaf<br>Bootstrap 5<br>HTML5</p>
+        </div>
+        <div class="tech-box">
+            <h3>Données</h3>
+            <p>PostgreSQL<br>H2 Database<br>JPA/Hibernate</p>
+        </div>
+        <div class="tech-box">
+            <h3>Build</h3>
+            <p>Maven<br>Spring Boot Maven Plugin</p>
+        </div>
+        <div class="tech-box">
+            <h3>Sécurité</h3>
+            <p>BCrypt<br>CSRF Protection<br>Session Management</p>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 7: Entités Principales -->
+<section class="slide">
+    <h2>Modèle de Données</h2>
+    <div style="margin-top: 30px; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto; font-size: 1rem;">
+        <div class="feature" style="background-color: #1e293b;">
+            <strong style="color: #38bdf8;">👤 User</strong> → id, username, password (BCrypt), role (ADMIN/STUDENT)
+        </div>
+        <div class="feature" style="background-color: #1e293b;">
+            <strong style="color: #38bdf8;">📘 Course</strong> → title, content, status (DRAFT/PUBLISHED), formules mathématiques
+        </div>
+        <div class="feature" style="background-color: #1e293b;">
+            <strong style="color: #38bdf8;">📚 CourseChunk</strong> → Segments pour RAG (chunk_size=500, overlap=50)
+        </div>
+        <div class="feature" style="background-color: #1e293b;">
+            <strong style="color: #38bdf8;">❓ Quiz</strong> → Difficulty (EASY/MEDIUM/HARD/EXPERT), Questions, GeneratedDate
+        </div>
+        <div class="feature" style="background-color: #1e293b;">
+            <strong style="color: #38bdf8;">📊 QuizResult</strong> → Score, Feedback (généré par IA), Explanation
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 8: Contenu Complexe -->
+<section class="slide">
+    <h2>Gestion Contenu Complexe</h2>
+    <p style="margin-top: 30px; margin-bottom: 30px;">
+        Notre plateforme supporte <span class="highlight">plus que du simple texte</span>
+    </p>
+    
+    <div class="formula">
+        Chimie : <strong>2H₂ + O₂ → 2H₂O</strong><br>
+        <span style="font-size: 1rem; color: #cbd5e1;">Réaction de combustion de l'hydrogène</span>
+    </div>
+    
+    <div class="formula">
+        Mathématiques : <strong>∫(x²)dx = x³/3 + C</strong><br>
+        <span style="font-size: 1rem; color: #cbd5e1;">Intégrale polynomiale</span>
+    </div>
+
+    <p style="margin-top: 30px; font-size: 1rem; color: #94a3b8;">
+        ✅ Stockage des formules | ✅ Affichage correct | ✅ Utilisation dans les quiz
+    </p>
+</section>
+
+<!-- SLIDE 9: Support Cours Complexes -->
+<section class="slide">
+    <h2>Tous les Types de Cours Supportés</h2>
+    <p style="margin-top: 20px; margin-bottom: 30px;">
+        EduPlatform gère <span class="highlight">tous les formats de contenu</span>
+    </p>
+    
+    <div style="background-color: #1e293b; padding: 30px; margin: 20px auto; max-width: 700px; border-left: 4px solid #38bdf8;">
+        <p style="font-size: 1.125rem; color: #f1f5f9; margin-bottom: 20px;">
+            <strong>📚 Exemple : Cours de Physique Mécanique</strong>
+        </p>
+        <p style="color: #cbd5e1; margin-bottom: 15px;">
+            Contenu : Texte + Diagrammes + Formules complexes
+        </p>
+        <p style="color: #cbd5e1; margin-bottom: 15px;">
+            <strong>Équations supportées :</strong>
+        </p>
+        <div style="background-color: #0f172a; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+            <p style="color: #38bdf8; font-weight: 600; margin-bottom: 10px;">
+                Motion : <strong>v = v₀ + at</strong>
+            </p>
+            <p style="color: #38bdf8; font-weight: 600; margin-bottom: 10px;">
+                Énergie : <strong>E_p = mgh</strong>
+            </p>
+            <p style="color: #38bdf8; font-weight: 600;">
+                Travail : <strong>W = F · d · cos(θ)</strong>
+            </p>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.95rem;">
+            ✅ Tous les contenus générés dans les quiz | ✅ Feedback IA contextuel sur formules
+        </p>
+    </div>
+</section>
+
+<!-- SLIDE 10: Workflow Quiz -->
+<section class="slide">
+    <h2>Génération de Quiz Adaptative</h2>
+    <div style="margin-top: 40px; text-align: left; max-width: 750px; margin-left: auto; margin-right: auto;">
+        <p style="margin-bottom: 15px;"><span class="highlight">1️⃣ Étudiant</span> demande un quiz</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">2️⃣ Agent IA</span> analyse historique (scores précédents)</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">3️⃣ Calcul adaptatif</span> : Score ≥ 90% → EXPERT | 75% → HARD | 50% → MEDIUM | < 50% → EASY</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">4️⃣ RAG</span> récupère contenu pertinent du cours</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">5️⃣ LLM</span> génère questions basées sur le contexte réel</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">6️⃣ Étudiant</span> prend le quiz</p>
+        <p style="margin-bottom: 15px;"><span class="highlight">7️⃣ IA</span> génère feedback personnalisé et contextuel</p>
+    </div>
+</section>
+
+<!-- SLIDE 11: Avantages IA -->
+<section class="slide">
+    <h2>Avantages de Notre Approche</h2>
+    <div class="two-column" style="margin-top: 50px;">
+        <div class="column">
+            <h3>Avant (Traditionnel)</h3>
+            <ul>
+                <li>❌ Tous les quiz identiques</li>
+                <li>❌ Pas d'adaptation</li>
+                <li>❌ Feedback générique</li>
+                <li>❌ Contenu simple seulement</li>
+            </ul>
+        </div>
+        <div class="column">
+            <h3>Après (EduPlatform)</h3>
+            <ul>
+                <li>✅ Quiz personnalisés par étudiant</li>
+                <li>✅ Difficulté adaptative</li>
+                <li>✅ Feedback contextuel IA</li>
+                <li>✅ Support contenu complexe</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 12: Sécurité -->
+<section class="slide">
+    <h2>Sécurité & Authentification</h2>
+    <div style="margin-top: 40px;">
+        <div class="feature">
+            <strong>🔐 Spring Security</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Form-based authentication avec CSRF protection</p>
+        </div>
+        <div class="feature">
+            <strong>🔑 Password Encoding</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">BCrypt adaptive - sécurité maximale</p>
+        </div>
+        <div class="feature">
+            <strong>👥 Role-Based Access</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">ADMINISTRATOR et STUDENT avec autorisations spécifiques</p>
+        </div>
+        <div class="feature">
+            <strong>⏱️ Session Management</strong>
+            <p style="margin: 5px 0 0 0; font-size: 1rem;">Timeouts et gestion de session sécurisée</p>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 13: Démo - Admin -->
+<section class="slide">
+    <h2>Démonstration : Admin Dashboard</h2>
+    <p style="margin-top: 40px; margin-bottom: 20px; font-size: 1.25rem; color: #cbd5e1;">
+        <span class="highlight">Connexion :</span> admin / admin123
+    </p>
+    <div style="text-align: left; max-width: 700px; margin-left: auto; margin-right: auto; margin-top: 30px;">
+        <p style="margin-bottom: 15px;">✅ Tableau de bord : Statistiques et activités récentes</p>
+        <p style="margin-bottom: 15px;">✅ Gestion Cours : Créer, éditer, publier des cours</p>
+        <p style="margin-bottom: 15px;">✅ Contenu Complexe : Ajouter formules mathématiques</p>
+        <p style="margin-bottom: 15px;">✅ Indexation RAG : Préparer le contenu pour l'IA</p>
+        <p style="margin-bottom: 15px;">✅ Gestion Étudiants : Créer et assigner à des cours</p>
+    </div>
+</section>
+
+<!-- SLIDE 14: Démo - Student Quiz -->
+<section class="slide">
+    <h2>Démonstration : Student Quiz</h2>
+    <p style="margin-top: 40px; margin-bottom: 20px; font-size: 1.25rem; color: #cbd5e1;">
+        <span class="highlight">Connexion :</span> student1 / student123
+    </p>
+    <div style="text-align: left; max-width: 700px; margin-left: auto; margin-right: auto; margin-top: 30px;">
+        <p style="margin-bottom: 15px;">1️⃣ Dashboard : Affiche cours inscrits</p>
+        <p style="margin-bottom: 15px;">2️⃣ Sélection Quiz : Choisir difficulté (EASY/MEDIUM/HARD)</p>
+        <p style="margin-bottom: 15px;">3️⃣ Questions Générées : Avec contenu mathématique du cours</p>
+        <p style="margin-bottom: 15px;">4️⃣ Réponses : Interface interactive</p>
+        <p style="margin-bottom: 15px;">5️⃣ Résultats : Score + Feedback IA personnalisé</p>
+    </div>
+</section>
+
+<!-- SLIDE 15: Démo - Progress Tracking -->
+<section class="slide">
+    <h2>Démonstration : Progress Tracking</h2>
+    <div style="margin-top: 50px; text-align: left; max-width: 700px; margin-left: auto; margin-right: auto;">
+        <p style="margin-bottom: 25px; font-size: 1.25rem;">
+            <span class="highlight">Historique des Quiz</span>
+        </p>
+        <p style="margin-bottom: 15px;">📊 Tous les quiz antérieurs avec scores</p>
+        <p style="margin-bottom: 15px;">📈 Graphique de progression : Amélioration visible</p>
+        <p style="margin-bottom: 15px;">🎯 Difficulté adaptative : Augmente avec le score</p>
+        <p style="margin-bottom: 15px;">💬 Feedback archivé : Toutes les explications IA</p>
+    </div>
+</section>
+
+<!-- SLIDE 16: Résumé -->
+<section class="slide">
+    <h2>En Résumé</h2>
+    <div style="margin-top: 40px;">
+        <p style="margin-bottom: 25px; font-size: 1.25rem;">
+            <strong style="color: #38bdf8;">EduPlatform</strong> est une solution <strong>complète et réelle</strong>
+        </p>
+        <div class="feature" style="margin-bottom: 20px;">
+            ✅ Plateforme production-ready (sécurité, DB, authentification)
+        </div>
+        <div class="feature" style="margin-bottom: 20px;">
+            ✅ IA intelligente (LLM + RAG + Agent orchestration)
+        </div>
+        <div class="feature" style="margin-bottom: 20px;">
+            ✅ Gère contenu complexe (mathématiques, formules)
+        </div>
+        <div class="feature">
+            ✅ Adaptive learning : Chaque étudiant = expérience unique
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 17: Merci -->
+<section class="slide">
+    <h1 style="font-size: 3rem;">Merci !</h1>
+    <p style="margin-top: 40px; margin-bottom: 30px;">Questions ?</p>
+    <div style="margin-top: 50px; font-size: 1rem; color: #94a3b8;">
+        <p style="margin-bottom: 10px;">📁 Repository : https://github.com/MA-Zbida/eduplatform</p>
+        <p>🔧 Stack : Java 21 | Spring Boot 3.2.1 | Spring AI 0.8.1</p>
+    </div>
+</section>
+
+</body>
+</html>
